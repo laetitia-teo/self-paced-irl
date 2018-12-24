@@ -1,3 +1,6 @@
+# Discrete Q Agent for generating optimal trajectories
+
+
 import gym
 import numpy as np
 from tqdm import tqdm
@@ -78,8 +81,6 @@ class QAgent():
     
     def done(self, state):
         done = (np.floor(state[0]*self.discr) >= np.floor(0.5*self.discr))
-        if done:
-            print(done)
         return done
         
     def episode(self, eps, render=False):
@@ -87,6 +88,10 @@ class QAgent():
         done = False
         state = self.env.reset()
         state_trace = [state]
+        states = []
+        actions = []
+        rewards = []
+        next_states = []
         for t in range(self.T):
             if not self.done(state): 
                 if render:
@@ -94,19 +99,25 @@ class QAgent():
                 # choose an action
                 action = self.eps_greedy_action(eps, state)
                 # take a step, collect a reward
-                nextstate, reward, _, _ = self.env.step(action)
+                next_state, reward, _, _ = self.env.step(action)
                 # update q function
-                self.Q_update(state, action, nextstate, reward)
+                self.Q_update(state, action, next_state, reward)
+                # save transition into trajectory
+                states.append(list(state))
+                actions.append(action)
+                rewards.append(reward)
+                next_states.append(list(next_state))
                 # go into next state
-                state = nextstate
-                state_trace.append(state)
+                state = next_state
             else:
                 break
-        return state_trace
+        return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
     
     def q_learn(self, N):
         # performing N trajectories
-        epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
+        #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
+        #epsilon = [1/(i+1) for i in range(int(N))]
+        epsilon = [0.1 for i in range(N)]
         for n in tqdm(range(N)):
             #print('episode {}'.format(n))
             self.episode(epsilon[n])
@@ -119,6 +130,12 @@ class QAgent():
         for i in range(n_traj):
             traj.append(self.episode(0.0))
         return traj
+    
+    def generate_trajectory_file(self, n_traj):
+        traj = self.generate_trajectories(n_traj)
+        with open('data.txt', 'w') as f:
+            for t in traj:
+                f.write(str(t) + '\n')
 
 
 
