@@ -103,10 +103,10 @@ class QAgent():
                 # update q function
                 self.Q_update(state, action, next_state, reward)
                 # save transition into trajectory
-                states.append(state)
+                states.append(list(state))
                 actions.append(action)
                 rewards.append(reward)
-                next_states.append(next_state)
+                next_states.append(list(next_state))
                 # go into next state
                 state = next_state
             else:
@@ -134,7 +134,8 @@ class QAgent():
     def generate_trajectory_file(self, n_traj):
         traj = self.generate_trajectories(n_traj)
         with open('data.txt', 'w') as f:
-            f.write(str(traj))
+            for t in traj:
+                f.write(str(t) + '\n')
 
 
 
