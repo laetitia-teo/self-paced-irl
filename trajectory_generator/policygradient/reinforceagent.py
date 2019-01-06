@@ -2,6 +2,50 @@
 
 import numpy as np
 from tqdm import tqdm
+from copy import copy
+'''
+class LinearQuality():
+    """
+    A Linear Quality value for state-action values to use in a Gibbs policy.
+    """
+    
+    def __init__(self, theta=None):
+        if theta is None:
+            self.theta = np.zeros(6)
+        else:
+            try:
+                assert(type(theta) == type(np.zeros(6)) and len(theta) == 6)
+            except AssertionError:
+                raise TypeError(
+                'theta must be a numpy.ndarray of length 6, but is {}'.format(theta))
+            self.theta = theta
+        
+    def _action_to_vector(self, action):
+        vector = np.zeros(3)
+        if action in [0, 1, 2]:
+            vector[action] = 1.
+            return vector
+        else:
+            raise TypeError(
+                'action must be one of 0, 1, 2, but is {}'.format(action))
+        
+    def set_theta(self, theta):
+        self.theta = theta
+    
+    def add_theta(self, theta):
+        self.theta += theta
+    
+    def grad(self, state, action):
+        a = self._action_to_vector(action)
+        return np.concatenate([state, a, [1]])
+    
+    def zero(self):
+        return np.zeros(6)
+        
+    def value(self, state, action):
+        a = self._action_to_vector(action)
+        return np.dot(self.theta, np.concatenate([state, a, [1]])) # adding a bias
+'''
 
 class LinearQuality():
     """
@@ -9,33 +53,38 @@ class LinearQuality():
     """
     
     def __init__(self, theta=None):
-        try:
-            assert(type(theta) == type(np.zeros(6)) and len(theta) == 6)
-        except AssertionError:
-            raise TypeError(
-                'theta must be a numpy.ndarray of length 5, but is {}'.format(theta))
         if theta is None:
-            self.theta = np.zeros(6)
+            self.theta = 2*(np.random.random(3) - 0.5*np.ones(3))
         else:
             self.theta = theta
         
-    def _action_to_vector(action):
+    def _action_to_vector(self, action):
         vector = np.zeros(3)
         if action in [0, 1, 2]:
             vector[action] = 1.
             return vector
-        else raise TypeError(
-            'action must be one of 0, 1, 2, but is {}'.format(action))
-    
+        else:
+            raise TypeError(
+                'action must be one of 0, 1, 2, but is {}'.format(action))
+        
     def set_theta(self, theta):
         self.theta = theta
     
+    def add_theta(self, theta):
+        self.theta += theta
+    
     def grad(self, state, action):
-        return np.concatenate([state, a, [1]])
+        a = self._action_to_vector(action)
+        v = state[1]
+        return v * a
+    
+    def zero(self):
+        return np.zeros(3)
         
     def value(self, state, action):
-        a = _action_to_vector(action)
-        return np.dot(theta, np.concatenate([state, a, [1]])) # adding a bias
+        a = self._action_to_vector(action)
+        v = state[1]
+        return np.dot(self.theta, v * a)
 
 class GibbsPolicy():
     """
@@ -58,6 +107,12 @@ class GibbsPolicy():
     def set_theta(self, theta):
         self.Q.set_theta(theta)
     
+    def add_theta(self, theta):
+        self.Q.add_theta(theta)
+    
+    def get_theta(self):
+        return self.Q.theta
+    
     def proba(self, state, action):
         """
         The probability of taking action when in state.
@@ -65,7 +120,7 @@ class GibbsPolicy():
         denom = 0
         for a in self.actionlist:
             denom += np.exp(self.K * self.Q.value(state, a))
-        return np.exp(self.K * self.Q.value(state, action)/denom
+        return np.exp(self.K * self.Q.value(state, action))/denom
     
     def logproba(self, state, action):
         return np.log(self.proba(state, action))
@@ -81,21 +136,30 @@ class GibbsPolicy():
             if p <= thresh:
                 return action
     
+    def done(self, state):
+        pos = state[0]
+        if pos >= 0.5:
+            return True
+        else:
+            return False
+    
     def gradlog(self, N, render=False):
         """
         Estimates, by a Monte-Carlo scheme on trajectories, the gradient of the objective 
         (score fonction) with respect to theta.
         """
-        grad = np.zeros(6)
+        grad = self.Q.zero()
+        length = 0
         for n in range(N):
+            #print('episode')
             # performing N trajectories to compute the gradient estimate.
             done = False
             state = self.env.reset()  # reset the environment at the beginning of each MC run
             # initialize the gradient of log-probabilities and cumulative reward
-            gradlog = np.zeros(6)
+            gradlog = self.Q.zero()
             R = 0.
             for t in range(self.T):
-                if not done:
+                if not self.done(state):
                     if render:
                         self.env.render()
                     # sample an action according to the policy
@@ -106,11 +170,14 @@ class GibbsPolicy():
                     gradlog += self.K * self.Q.grad(state, action)
                     for a in self.actionlist:
                         gradlog -= self.K * self.proba(state, a) * self.Q.grad(state, a)
-                    R += self.gamma**idx * reward
+                    R += self.gamma**t * reward
                     # go into next state
                     state = next_state
+                    length += 1/N
+                else:
+                    break
             grad += 1/N * gradlog * R
-        return grad
+        return grad, length
     
     def learn(self, I, N, alphas):
         """
@@ -118,12 +185,38 @@ class GibbsPolicy():
         the optimal parameter for the policy.
         """
         thetas = []
-        for i in range(I):
-            grad = gradlog(N)
-            self.theta += alphas[i] * grad  
-            thetas.append(self.theta)
-        return thetas  
+        grads = []
+        lengths = []
+        for i in tqdm(range(I)):
+            grad, l = self.gradlog(N)
+            grads.append(grad)
+            self.add_theta(alphas[i] * grad)
+            theta = copy(self.get_theta())
+            #print(theta)
+            thetas.append(theta)
+            lengths.append(l)
+        return thetas, grads, lengths
     
+    def episode(self, render=False):
+        states = []
+        actions = []
+        rewards = []
+        next_states = []
+        state = self.env.reset()
+        for t in range(self.T):
+            if not self.done(state):
+                if render:
+                    self.env.render()
+                action = self.sample(state)
+                next_state, reward, _, _ = self.env.step(action)
+                states.append(state)
+                actions.append(action)
+                rewards.append(reward)
+                next_states.append(next_state)
+                state = next_state
+            else:
+                break
+        return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
 
 
 
