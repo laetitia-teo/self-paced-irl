@@ -1,6 +1,51 @@
+# REINFORCE Agent for generating optimal trajectories
+
 import numpy as np
-from copy import copy
 from tqdm import tqdm
+from copy import copy
+'''
+class LinearQuality():
+    """
+    A Linear Quality value for state-action values to use in a Gibbs policy.
+    """
+    
+    def __init__(self, theta=None):
+        if theta is None:
+            self.theta = np.zeros(6)
+        else:
+            try:
+                assert(type(theta) == type(np.zeros(6)) and len(theta) == 6)
+            except AssertionError:
+                raise TypeError(
+                'theta must be a numpy.ndarray of length 6, but is {}'.format(theta))
+            self.theta = theta
+        
+    def _action_to_vector(self, action):
+        vector = np.zeros(3)
+        if action in [0, 1, 2]:
+            vector[action] = 1.
+            return vector
+        else:
+            raise TypeError(
+                'action must be one of 0, 1, 2, but is {}'.format(action))
+        
+    def set_theta(self, theta):
+        self.theta = theta
+    
+    def add_theta(self, theta):
+        self.theta += theta
+    
+    def grad(self, state, action):
+        a = self._action_to_vector(action)
+        return np.concatenate([state, a, [1]])
+    
+    def zero(self):
+        return np.zeros(6)
+        
+    def value(self, state, action):
+        a = self._action_to_vector(action)
+        return np.dot(self.theta, np.concatenate([state, a, [1]])) # adding a bias
+'''
 
 class Quality():
     """
@@ -66,7 +111,7 @@ class GibbsPolicy():
         self.Q.add_theta(theta)
     
     def get_theta(self):
-        return copy(self.Q.theta)
+        return self.Q.theta
     
     def proba(self, state, action):
         """
@@ -97,7 +142,6 @@ class GibbsPolicy():
             return True
         else:
             return False
-    
     
     def grad_log(self, traj):
         """
@@ -184,54 +228,7 @@ class GibbsPolicy():
                 state = next_state
             else:
                 break
-        print(t)
         return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
-    
-    def estim_theta(self, trajs, alphas, n_steps):
-        """
-        Performs gradient ascent on the log-likelihood to estimate the theta parameter.
-        """
-        trace = [self.get_theta()]
-        N = len(trajs)
-        for s in tqdm(range(n_steps)):
-            grad = self.Q.zero()
-            for traj in trajs:
-                grad += 1/N * self.grad_log(traj)
-            self.add_theta(alphas[s] * grad)
-            trace.append(self.get_theta())
-        return trace
-    
-    def fit(self, data, n_steps):
-        """
-        Interface to use to fit the theta parameter to given trajectories.
-        
-        n_steps = number of steps of gradient ascent.
-        """
-        N = len(data)
-        trajs = []
-        for i in range(N):
-            traj = []           # building a single trajectory
-            T = len(data[i]['states'])
-            for t in range(T):
-                state = data[i]['states'][t]
-                action = data[i]['actions'][t]
-                traj.append([state, action])
-            trajs.append(traj)
-        alphas = [.5 for i in range(n_steps)]
-        thetas = self.estim_theta(trajs, alphas, n_steps)
-        self.set_theta(thetas[-1])
-        return thetas
-
-
-
-
-
-
-
-
-
-
-
 
 
 
