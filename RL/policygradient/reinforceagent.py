@@ -47,9 +47,9 @@ class LinearQuality():
         return np.dot(self.theta, np.concatenate([state, a, [1]])) # adding a bias
 '''
 
-class LinearQuality():
+class Quality():
     """
-    A Linear Quality value for state-action values to use in a Gibbs policy.
+    A Quality value for state-action values to use in a Gibbs policy.
     """
     
     def __init__(self, theta=None):
@@ -96,7 +96,7 @@ class GibbsPolicy():
     def __init__(self, env, T, K, Q=None, gamma=0.9):
         self.K = K
         if Q is None:
-            self.Q = LinearQuality()
+            self.Q = Quality()
         else:
             self.Q = Q
         self.actionlist = [0, 1, 2]
@@ -143,7 +143,19 @@ class GibbsPolicy():
         else:
             return False
     
-    def gradlog(self, N, render=False):
+    def grad_log(self, traj):
+        """
+        Computes the gradient of the log-probability according to theta, on a batch composed
+        of a list of states and actions.
+        """
+        g = self.Q.zero()
+        for state, action in traj:
+            g += self.K * self.Q.grad(state, action)
+            for a in self.actionlist:
+                g -= self.K * self.proba(state, a) * self.Q.grad(state, a)
+        return g
+    
+    def grad_log_J(self, N, render=False):
         """
         Estimates, by a Monte-Carlo scheme on trajectories, the gradient of the objective 
         (score fonction) with respect to theta.
@@ -188,7 +200,7 @@ class GibbsPolicy():
         grads = []
         lengths = []
         for i in tqdm(range(I)):
-            grad, l = self.gradlog(N)
+            grad, l = self.grad_log_J(N)
             grads.append(grad)
             self.add_theta(alphas[i] * grad)
             theta = copy(self.get_theta())
