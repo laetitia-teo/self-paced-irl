@@ -61,6 +61,7 @@ plt.show()
 girl = irl.GIRL(reward, data, policy)
 girl.compute_jacobian()
 print(girl.jacobian)
+girl.print_jacobian()
 alphas = girl.solve()
 
 plt.plot(alphas)

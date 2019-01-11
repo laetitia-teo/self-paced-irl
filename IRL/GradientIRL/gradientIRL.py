@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.optimize as opt
-from numpy.linalg import inv
+from numpy.linalg import inv, norm
 from tqdm import tqdm
 
 class Reward():
@@ -93,6 +93,10 @@ class GIRL():
         for l in tqdm(range(len(self.reward.params))):
             self.jacobian[:, l] = self.compute_gradient(l)
     
+    def print_jacobian(self):
+        with open('data.txt', 'a') as f:
+            f.write(str(self.jacobian))
+    
     def objective(self, alpha):
         M = np.dot(self.jacobian.T, self.jacobian)
         return np.dot(alpha, np.dot(M, alpha))
@@ -108,6 +112,7 @@ class GIRL():
         result = opt.minimize(self.objective, alpha0, constraints=eq_cons)
         if not result.success:
             print(result.message)
+            print(result)
         alpha = result.x
         return alpha
     
