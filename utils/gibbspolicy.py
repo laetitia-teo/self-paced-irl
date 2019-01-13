@@ -2,13 +2,14 @@ import numpy as np
 from copy import copy
 from tqdm import tqdm
 
-class Quality():
+class LinearQuality():
     """
-    A Quality value for state-action values to use in a Gibbs policy.
+    A Simple Quality value for state-action values to use in a Gibbs policy.
     """
     
     def __init__(self, theta=None):
         if theta is None:
+            # uniform on [-1, 1]
             self.theta = 2*(np.random.random(3) - 0.5*np.ones(3))
         else:
             self.theta = theta
@@ -40,6 +41,39 @@ class Quality():
         a = self._action_to_vector(action)
         v = state[1]
         return np.dot(self.theta, v * a)
+    
+class FC1Quality():
+    """
+    A Quality value function based on a Fully-Connected neural network, with
+    one hidden layer.
+    """
+    
+    def __init__(self, n_h, input_size):
+        # number of hidden units
+        self.n_h = n_h
+        # weights between input and hidden units
+        self.Wih = np.zeros([input_size, n_h])
+        # weights between hidden units and output
+        self.Who = np.zeros(n_h)
+        
+    def _action_to_vector(self, action):
+        return
+        
+    def set_theta(self, theta):
+        self.theta = theta
+    
+    def add_theta(self, theta):
+        raise NotImplementedError()
+    
+    def grad(self, state, action):
+        raise NotImplementedError()
+    
+    def zero(self):
+        raise NotImplementedError()
+        
+    def value(self, state, action):
+        raise NotImplementedError()
+
 
 class GibbsPolicy():
     """
@@ -51,7 +85,7 @@ class GibbsPolicy():
     def __init__(self, env, T, K, Q=None, gamma=0.9):
         self.K = K
         if Q is None:
-            self.Q = Quality()
+            self.Q = LinearQuality()
         else:
             self.Q = Q
         self.actionlist = [0, 1, 2]
@@ -100,6 +134,12 @@ class GibbsPolicy():
             return True
         else:
             return False
+    
+    def gradlog(self, state, action):
+        g = self.K * self.Q.grad(state, action)
+        for a in self.actionlist:
+            g -= self.K * self.proba(state, a) * self.Q.grad(state, a)
+        return g
     
     
     def grad_log(self, traj):
