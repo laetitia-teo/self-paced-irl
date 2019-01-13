@@ -131,9 +131,9 @@ class QAgent():
             traj.append(self.episode(0.0))
         return traj
     
-    def generate_trajectory_file(self, n_traj):
+    def generate_trajectory_file(self, n_traj, write_path):
         traj = self.generate_trajectories(n_traj)
-        with open('data.txt', 'w') as f:
+        with open(write_path, 'w') as f:
             for t in traj:
                 f.write(str(t) + '\n')
 

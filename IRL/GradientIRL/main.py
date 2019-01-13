@@ -2,42 +2,46 @@ import sys
 
 sys.path.append('..')
 sys.path.append('../..')
+sys.path.append('../../utils')
 
 import numpy as np
 import gym
 import matplotlib.pyplot as plt
 import readtrajectory as read
 import estimatepolicy as estim
-import RL.policygradient.reinforceagent
+import utils.gibbspolicy as gp
 import gradientIRL as irl
+from mpl_toolkits.mplot3d import Axes3D
 
 env = gym.make('MountainCar-v0')
 T = 1000
-data_path = '../../data/data.txt'
-
-print('hello')
+data_path = '../../data/data_long.txt'
 
 # Read the data
 
 data = read.read(data_path)
-print(len(data))
 
 # Estimate the policy parameters
 
-policy = estim.GibbsPolicy(env, T, 1.)
+policy = gp.GibbsPolicy(env, T, 2.)
 
-trace = policy.fit(data, 500)
+print('fitting policy to data...')
 
-print(trace[-1])
-print(policy.get_theta())
+trace = policy.fit(data, 200)
+
+#print(trace[-1])
+#print(policy.get_theta())
 policy.episode(render=True)
 for i in range(10):
     policy.episode()
 
-plt.plot([t[0] for t in trace])
-plt.plot([t[2] for t in trace])
-plt.show()
+#plt.plot([t[0] for t in trace])
+#plt.plot([t[2] for t in trace])
+#plt.show()
 
+
+#policy.set_theta(np.array([-18, -1, 18]))
+#policy.episode(render=True)
 env.close()
 
 print('solving the IRL problem:')
@@ -46,6 +50,20 @@ dx = 5
 dv = 5
 
 reward = irl.Reward(dx, dv)
+
+L = dx*dv
+
+def plot(p):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for idx in range(L):
+        j = int(idx % dv)
+        i = int((idx - j)/dv)
+        ax.scatter(i, j, p[dv*i+j], c='r')
+    plt.show()
+
+plot(reward.params)
+
 '''
 print('')
 
@@ -67,10 +85,10 @@ alphas = girl.solve()
 plt.plot(alphas)
 plt.show()
 
-print(alphas)
+plot(alphas)
 
 
-# Solve the optimization problem
+
 
 
 

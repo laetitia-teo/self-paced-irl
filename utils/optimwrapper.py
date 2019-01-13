@@ -42,6 +42,10 @@ class OptimizationWrapper():
         else:
             return np.dot(x, self.params) # default
     
+    def fit(self):
+        # minimize
+        raise NotImplementedError()
+    
     def loss(self, x, y):
         # for this example, we can take the MSE
         return (self.predict(x) - y)**2 + self.regularization()

@@ -1,7 +1,11 @@
+import sys
 import numpy as np
 import scipy.optimize as opt
 from numpy.linalg import inv, norm
 from tqdm import tqdm
+from copy import copy
+
+sys.path.append('../..')
 
 class Reward():
     """
@@ -21,7 +25,7 @@ class Reward():
         # tune sigma according to the discretization
         self.sigma_inv = inv(np.array([[.05, 0.  ],
                                       [0., .0003]])) 
-        self.params = np.random.random(dx * dv)
+        self.params = np.zeros(dx * dv)
     
     def value(self, state, action):
         r = 0.
@@ -29,7 +33,9 @@ class Reward():
             for j in range(self.dv):
                 r += self.params[i, j] * self.basis(state, i, j)
     
-    def basis(self, state, i, j):
+    def basis(self, state, idx):
+        j = idx % self.dv
+        i = (idx - j)/self.dv
         x, v = state
         xi = i / (self.dx-1) * self.lx - self.zx 
         vj = j / (self.dv-1) * self.lv - self.zv
@@ -37,15 +43,21 @@ class Reward():
         si = np.array([xi, vj])
         return np.exp(-np.dot((s - si), np.dot(self.sigma_inv, (s - si))))
     
-    def partial_value(self, state, action, l):
-        j = l % self.dv
-        i = (l - j)/self.dv
-        return self.params[l] * self.basis(state, i, j)
+    def partial_value(self, state, action, idx):
+        j = idx % self.dv
+        i = (idx - j)/self.dv
+        return self.params[idx] * self.basis(state, i, j)
     
-    def partial_traj(self, traj, l):
+    def partial_traj(self, traj, idx):
         r = 0.
         for state, action in traj:
-            r += self.partial_value(state, action, l)
+            r += self.partial_value(state, action, idx)
+        return r
+    
+    def basis_traj(self, traj, idx):
+        r = 0.
+        for state, _ in traj:
+            r += self.basis(state, idx)
         return r
 
 class GIRL():
@@ -73,7 +85,7 @@ class GIRL():
         """
         return self.expert_policy.Q.zero()
     
-    def compute_gradient(self, l):
+    def compute_gradient(self, idx):
         """
         Computes, averaged on the set of trajectories given to the GIRL object, the gradient of 
         the objective function with respect to the expert policy parameters associated with
@@ -82,9 +94,9 @@ class GIRL():
         grad = self.zero()
         for traj in self.trajs:
             g = self.expert_policy.grad_log(traj)
-            r = self.reward.partial_traj(traj, l)
-            grad += 1/self.N * r * g
-        return grad
+            r = self.reward.basis_traj(traj, idx)
+            grad += r * g
+        return grad/self.N
         
     def compute_jacobian(self):
         """
@@ -103,11 +115,11 @@ class GIRL():
     
     def solve(self):
         # Define constraints
-        h = lambda x: np.ones(len(x)).dot(x) - 1  # sum of all the alphas must be 1
+        h = lambda x: norm(x, 1) - 1  # sum of all the alphas must be 1
         eq_cons = {'type': 'eq', 'fun': h}
+        #ineq_cons = {'type': '
         # Define starting point
-        l = len(self.reward.params)
-        alpha0 = 1/l * np.random.random(l)  # TODO : test with random starting vector
+        alpha0 = copy(self.reward.params)  # TODO : test with random starting vector
         # Define hessian and gradient of the objective?
         result = opt.minimize(self.objective, alpha0, constraints=eq_cons)
         if not result.success:

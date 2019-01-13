@@ -4,7 +4,7 @@ from qagent import *
 import matplotlib.pyplot as plt
 
 env = gym.make('MountainCar-v0')
-
+write_path = 'data_long.txt'
 T = 1000
 
 qa = QAgent(env, 1000)
@@ -13,25 +13,18 @@ qa = QAgent(env, 1000)
 
 qa.q_learn(20000)
 
-trajs = qa.generate_trajectories(15)
-pos = []
+trajs = qa.generate_trajectories(50)
 
-print(trajs)
+plt.plot([len(t) for t in trajs])
 
-plt.figure()
+proceed = input('Proceed to trajectory generation ?')
 
-for t in trajs:
-    l = []
-    for s in t['states']:
-        l.append(s[0])
-    pos.append(l)
+if proceed == 'y':
+    qa.generate_trajectory_file(200, write_path)
+else:
+    qa.q_learn(20000)
 
-for p in pos:
-    plt.plot(p)
 
-plt.show()
-
-qa.generate_trajectory_file(15)
 
 
 
