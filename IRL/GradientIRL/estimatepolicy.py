@@ -106,11 +106,19 @@ class GibbsPolicy():
         """
         g = self.Q.zero()
         for state, action in traj:
-            g += self.K * self.Q.grad(state, action)
-            for a in self.actionlist:
-                g -= self.K * self.proba(state, a) * self.Q.grad(state, a)
+            g+=self.Q.grad(state, action)
+			for a in self.actionlist:
+				g -= self.proba(state, a) * self.Q.grad(state, a)
+		g = self.K * g
         return g
     
+	def grad_log_state(self, state):
+		#return all values for all actions
+		g = self.Q.grad(state, action)
+        for a in self.actionlist:
+            g -= self.proba(state, a) * self.Q.grad(state, a)
+		return g
+	
     def grad_log_J(self, N, render=False):
         """
         Estimates, by a Monte-Carlo scheme on trajectories, the gradient of the objective 
