@@ -41,9 +41,7 @@ print('fitting policy to data...')
 
 
 policy.set_theta(np.array([-18, -1, 18]))
-policy.episode(render=True)
 
-policy.episode(render=True)
 for i in range(10):
     policy.episode()
 
@@ -52,8 +50,8 @@ env.close()
 print('solving the IRL problem:')
 
 
-dx = 50
-dv = 50
+dx = 15
+dv = 15
 
 
 reward = rew.Reward(dx, dv,env)
