@@ -13,12 +13,13 @@ class Reward():
     dv -> number of basis functions on the velocity dimension.
     """
     def __init__(self, dx, dv, env):
+        sp = env.observation_space
         self.dx = dx
         self.dv = dv
-        self.lx = env.low[0]  # length of the position interval
-        self.lv = env.low[1] # length of the velocity interval
-        self.zx = env.high[0]  # zero of the position interval
-        self.zv = env.high[1] # zero of the velocity interval
+        self.lx = sp.high[0] - sp.low[0]  # length of the position interval
+        self.lv = sp.high[1] - sp.low[1] # length of the velocity interval
+        self.zx = -sp.low[0]  # zero of the position interval
+        self.zv = -sp.low[1] # zero of the velocity interval
         # tune sigma according to the discretization
         self.sigma_inv = inv(np.array([[.05, 0.  ],
                                       [0., .0003]])) 
@@ -32,7 +33,7 @@ class Reward():
     
     def basis(self, state, idx):
         j = idx % self.dv
-        i = (idx - j)/self.dv
+        i = (idx - j)//self.dv
         x, v = state
         xi = i / (self.dx-1) * self.lx - self.zx 
         vj = j / (self.dv-1) * self.lv - self.zv
@@ -42,7 +43,7 @@ class Reward():
     
     def partial_value(self, state, action, idx):
         j = idx % self.dv
-        i = (idx - j)/self.dv
+        i = (idx - j)//self.dv
         return self.params[idx] * self.basis(state, i, j)
     
     def partial_traj(self, traj, idx):
@@ -71,12 +72,12 @@ class Reward():
     def plot(self):
         ax = fig.gca(projection='3d')
         for i in range(self.dx):
-        for j in range(self.dv):
-            xi = i / (X-1) * 1.8 - 0.6
-            vj = j / (V-1) * 0.14 - 0.07
-            r[i, j] = reward.value([xi, vj], 1)
-            ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False)
+            for j in range(self.dv):
+                xi = i / (X-1) * 1.8 - 0.6
+                vj = j / (V-1) * 0.14 - 0.07
+                r[i, j] = reward.value([xi, vj], 1)
+                ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
+                                linewidth=0, antialiased=False)
 
 plt.show()
     
