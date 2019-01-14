@@ -68,7 +68,23 @@ class GIRL(IRL):
     
     def loss(self, trajs):
         #Linear approximation of the reward
-        return self.objective(self.reward.params,trajs)
+        jacobian = self.compute_jacobian(trajs)
+        M = np.dot(jacobian.T, jacobian)
+        return self.loss2(self.reward.params,M)
+    
+    def loss3(self,trajs):
+        losses = []
+        for traj in trajs:
+            g = self.expert_policy.grad_log(traj)
+            temp = np.zeros([len(self.expert_policy.get_theta()), len(self.reward.params)])
+            for idx in range(len(self.reward.params)):
+                temp[:,idx] = self.reward.basis_traj(traj, idx) * np.ones(len(temp))
+            jacobian = (g*temp.T).T
+            M = np.dot(jacobian.T, jacobian)
+            losses.append(self.loss2(self.reward.params,M))
+        return np.asarray(losses)
+            
+
     
     def solve(self,trajs):
         # Define constraints

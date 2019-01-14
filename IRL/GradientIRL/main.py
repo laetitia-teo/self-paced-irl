@@ -51,8 +51,8 @@ env.close()
 
 print('solving the IRL problem:')
 
-dx = 50
-dv = 50
+dx = 10
+dv = 10
 
 reward = rew.Reward(dx, dv,env)
 

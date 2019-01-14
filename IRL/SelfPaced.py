@@ -6,10 +6,11 @@ Created on Tue Dec 25 17:06:55 2018
 """
 import numpy as np
 import scipy.optimize as opt
+from IRL import IRL
 
 #Self paced
 
-class Self_paced():
+class Self_Paced(IRL):
     
     def __init__(self,f,K0,eps,data,model=None,constraint='hard'):
         self.f = f #class created by laetitia, comme GIRL par exemple, objet IRL
@@ -34,7 +35,9 @@ class Self_paced():
             
         self.w = self.f.reward.params #w is the weight of our model, see GIRL example
         self.v = - np.ones(len(self.trajs)) #start
-
+    
+    def zero(self):
+        self.f.zero()
         
     def reg(self,w):
         #for regularisation
