@@ -19,7 +19,8 @@ from SelfPaced import Self_Paced
 env = gym.make('MountainCar-v0')
 T = 1000
 data_path = '../../data/data_long.txt'
-write_path = 'reward_params.txt'
+write_path_girl = 'reward_params_girl.txt'
+write_path_self_paced = 'reward_params_girl_self_paced.txt'
 
 # Read the data
 
@@ -42,9 +43,7 @@ print('fitting policy to data...')
 
 
 policy.set_theta(np.array([-18, -1, 18]))
-#policy.episode(render=True)
 
-policy.episode(render=True)
 for i in range(10):
     policy.episode()
 
@@ -55,11 +54,13 @@ print('solving the IRL problem:')
 dx = 10
 dv = 10
 
+
 reward = rew.Reward(dx, dv,env)
 
 L = dx*dv
 
-# =============================================================================
+
+
 # def plot(p):
 #     fig = plt.figure()
 #     ax = fig.add_subplot(111, projection='3d')
@@ -84,11 +85,13 @@ plt.plot(l)
 plt.show()
 '''
 
-girl = irl.GIRL(reward, policy)
-trajs = girl.import_data(data)
-#girl.compute_jacobian()
-#print(girl.jacobian)
-alphas = girl.solve(trajs)
+# =============================================================================
+# girl = irl.GIRL(reward, policy)
+# trajs = girl.import_data(data)
+# #girl.compute_jacobian()
+# #print(girl.jacobian)
+# alphas = girl.solve(trajs)
+# =============================================================================
 
 # =============================================================================
 # plt.plot(alphas)
@@ -97,18 +100,20 @@ alphas = girl.solve(trajs)
 
 #plot(alphas)
 
-reward.set_params(alphas)
+# =============================================================================
+# reward.set_params(alphas)
+# 
+# reward.export_to_file(write_path_girl)
+# =============================================================================
+reward.import_from_file(write_path_girl)
 
-reward.export_to_file(write_path)
-reward.import_from_file(write_path)
-
-X = 50
-V = 50
+X = 200
+V = 200
 
 
 
-x = np.arange(-1.2, 0.6, 0.1)
-v = np.arange(-0.07, 0.07, 0.005)
+x = np.linspace(-1.2, 0.6, X)
+v = np.linspace(-0.07, 0.07,V)
 X = len(x)
 V = len(v)
 print(X)
@@ -135,24 +140,27 @@ ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
 
 plt.show()
 
-girl_self_paced = Self_Paced(f,K0,eps,data)
-trajs = girl.import_data(data)
-#girl.compute_jacobian()
-#print(girl.jacobian)
-alphas = girl.solve(trajs)
+reward_sp = rew.Reward(dx, dv,env)
+f_sp = irl.GIRL(reward_sp, policy)
+K0=1
+eps=1 #not working for now
+
+girl_self_paced = Self_Paced(f_sp,K0,eps,data)
+trajs = girl_self_paced.import_data(data)
+alphass = girl_self_paced.fit(trajs)
 
 #plt.plot(alphas)
 #plt.show()
 
 #plot(alphas)
 
-reward.set_params(alphas)
+reward_sp.set_params(alphass[-1])
 
-reward.export_to_file(write_path)
+reward_sp.export_to_file(write_path_self_paced)
 #reward.import_from_file(write_path)
 
-x = np.arange(-1.2, 0.6, 0.1)
-v = np.arange(-0.07, 0.07, 0.005)
+x = np.linspace(-1.2, 0.6, X)
+v = np.linspace(-0.07, 0.07, V)
 X = len(x)
 V = len(v)
 print(X)
@@ -167,7 +175,7 @@ for i in range(X):
     for j in range(V):
         xi = i / (X-1) * 1.8 - 1.2
         vj = j / (V-1) * 0.14 - 0.07
-        r[i, j] = reward.value([xi, vj], 1)
+        r[i, j] = reward_sp.value([xi, vj], 1)
 print(x.shape)
 print(v.shape)
 print(r.shape)

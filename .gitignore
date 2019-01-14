@@ -1,2 +1,4 @@
 data/data.txt
 Images/
+IRL/GradientIRL/rewards_params.txt
+IRL/GradientIRL/main.py

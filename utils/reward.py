@@ -21,8 +21,8 @@ class Reward():
         self.zx = - sp.low[0]  # zero of the position interval
         self.zv = - sp.low[1] # zero of the velocity interval
         # tune sigma according to the discretization
-        self.sigma_inv = inv(np.array([[.05, 0.  ],
-                                      [0., .0003]])) 
+        self.sigma_inv = inv(np.array([[0.5*(self.lx/self.dx)**2, 0.  ],
+                                      [0., 0.5*(self.lv/self.dv)**2]])) 
         self.params = np.zeros(dx * dv)
     
     def value(self, state, action):

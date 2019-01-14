@@ -12,10 +12,11 @@ from IRL import IRL
 
 class Self_Paced(IRL):
     
-    def __init__(self,f,K0,eps,data,model=None,constraint='hard'):
+    def __init__(self,f,K0,eps,mu,model=None,constraint='hard'):
         self.f = f #class created by laetitia, comme GIRL par exemple, objet IRL
         self.K = K0 
         self.eps=eps
+        self.mu = mu
         # params correspond to the ws in the paper.
         if self.model is None:
             self.params = self.zero()
@@ -25,7 +26,6 @@ class Self_Paced(IRL):
         #self.data=data
             
         self.w = self.f.reward.params #w is the weight of our model, see GIRL example
-        self.v = - np.ones(len(self.trajs)) #start
     
     def zero(self):
         self.f.zero()
@@ -36,6 +36,7 @@ class Self_Paced(IRL):
         
     def fit(self,trajs):
         start=True #for first iteration
+        self.v = - np.ones(len(trajs)) #start
         v0 = np.random.rand(len(trajs))
         old_v = self.v
         
@@ -55,9 +56,11 @@ class Self_Paced(IRL):
 #                 self.v = result_v.x
 # =============================================================================
                 
+                losses = self.f.loss(trajs)
+                print(losses)
                 #second method use dirac
                 old_v=self.v
-                self.v = np.where(self.f.loss(trajs) < 1/self.K,1,0)
+                self.v = np.where(losses < 1/self.K,1,0)
                 
                 #minimising for w
                 result_w = opt.minimize(self.objective_w, self.w)
