@@ -66,13 +66,7 @@ class GIRL(IRL):
     def loss2(self, alpha,M):
         return np.dot(alpha, np.dot(M, alpha))
     
-    def loss(self, trajs):
-        #Linear approximation of the reward
-        jacobian = self.compute_jacobian(trajs)
-        M = np.dot(jacobian.T, jacobian)
-        return self.loss2(self.reward.params,M)
-    
-    def loss3(self,trajs):
+    def loss(self,trajs):
         losses = []
         for traj in trajs:
             g = self.expert_policy.grad_log(traj)

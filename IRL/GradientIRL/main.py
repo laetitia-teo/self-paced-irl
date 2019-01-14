@@ -14,6 +14,7 @@ import utils.reward as rew
 import gradientIRL as irl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from SelfPaced import Self_Paced
 
 env = gym.make('MountainCar-v0')
 T = 1000
@@ -134,53 +135,46 @@ ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
 
 plt.show()
 
-# =============================================================================
-# girl = irl.GIRL(reward, policy)
-# trajs = girl.import_data(data)
-# #girl.compute_jacobian()
-# #print(girl.jacobian)
-# alphas = girl.solve(trajs)
-# 
-# #plt.plot(alphas)
-# #plt.show()
-# 
-# #plot(alphas)
-# 
-# reward.set_params(alphas)
-# 
-# reward.export_to_file(write_path)
-# #reward.import_from_file(write_path)
-# 
-# X = 50
-# V = 50
-# 
-# 
-# 
-# x = np.arange(-1.2, 0.6, 0.1)
-# v = np.arange(-0.07, 0.07, 0.005)
-# X = len(x)
-# V = len(v)
-# print(X)
-# print(V)
-# x, v = np.meshgrid(x, v)
-# 
-# r = np.zeros([X, V])
-# 
-# fig = plt.figure()
-# ax = fig.gca(projection='3d')
-# for i in range(X):
-#     for j in range(V):
-#         xi = i / (X-1) * 1.8 - 1.2
-#         vj = j / (V-1) * 0.14 - 0.07
-#         r[i, j] = reward.value([xi, vj], 1)
-# print(x.shape)
-# print(v.shape)
-# print(r.shape)
-# ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
-#                        linewidth=0, antialiased=False)
-# 
-# plt.show()
-# =============================================================================
+girl_self_paced = Self_Paced(f,K0,eps,data)
+trajs = girl.import_data(data)
+#girl.compute_jacobian()
+#print(girl.jacobian)
+alphas = girl.solve(trajs)
+
+#plt.plot(alphas)
+#plt.show()
+
+#plot(alphas)
+
+reward.set_params(alphas)
+
+reward.export_to_file(write_path)
+#reward.import_from_file(write_path)
+
+x = np.arange(-1.2, 0.6, 0.1)
+v = np.arange(-0.07, 0.07, 0.005)
+X = len(x)
+V = len(v)
+print(X)
+print(V)
+x, v = np.meshgrid(x, v)
+
+r = np.zeros([X, V])
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+for i in range(X):
+    for j in range(V):
+        xi = i / (X-1) * 1.8 - 1.2
+        vj = j / (V-1) * 0.14 - 0.07
+        r[i, j] = reward.value([xi, vj], 1)
+print(x.shape)
+print(v.shape)
+print(r.shape)
+ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+
+plt.show()
 
 '''
 fig = plt.figure()

@@ -23,15 +23,6 @@ class Self_Paced(IRL):
             self.params = self.model.get_params() # this may be subject to change
         self.constraint = constraint
         #self.data=data
-        self.trajs = []
-        for i in range(self.N):
-            traj = []           # building a single trajectory
-            T = len(data[i]['states'])
-            for t in range(T):
-                state = data[i]['states'][t]
-                action = data[i]['actions'][t]
-                traj.append([state, action])
-            self.trajs.append(traj)
             
         self.w = self.f.reward.params #w is the weight of our model, see GIRL example
         self.v = - np.ones(len(self.trajs)) #start
@@ -43,15 +34,15 @@ class Self_Paced(IRL):
         #for regularisation
         return 0
         
-    def fit(self,X,Y):
+    def fit(self,trajs):
         start=True #for first iteration
-        v0 = np.random.rand(len(self.trajs))
+        v0 = np.random.rand(len(trajs))
         old_v = self.v
         
         ws = []
         
         loss = []
-        while((self.v == np.ones(len(self.trajs))).all()): #find a termination condition perhaps double while (alternative search, and then decrement)
+        while((self.v == np.ones(len(trajs))).all()): #find a termination condition perhaps double while (alternative search, and then decrement)
             
             #Alternative search strategy
             while(start == True or not((old_v == self.v).all())):
@@ -66,7 +57,7 @@ class Self_Paced(IRL):
                 
                 #second method use dirac
                 old_v=self.v
-                self.v = np.where(self.f.loss(self.trajs) < 1/self.K,1,0)
+                self.v = np.where(self.f.loss(trajs) < 1/self.K,1,0)
                 
                 #minimising for w
                 result_w = opt.minimize(self.objective_w, self.w)
@@ -81,13 +72,14 @@ class Self_Paced(IRL):
         
         return ws
     
-    def objective_w(self,w):
-        return(np.dot(self.v, self.f.loss(w,self.trajs))+self.reg(w) ) #le reste est independant de w donc pas besoin de calculer
+    def objective_w(self,w,trajs):
+        return(np.dot(self.v, self.f.loss(w,trajs))+self.reg(w) ) #le reste est independant de w donc pas besoin de calculer
         
-    def objective_v(self,v):
-        return(np.dot(v,self.f.loss(self.trajs)) - np.sum(v)/self.K) #think about a way to only calculate objective if v is 1
+    def objective_v(self,v,trajs):
+        return(np.dot(v,self.f.loss(trajs)) - np.sum(v)/self.K) #think about a way to only calculate objective if v is 1
         
-    def objective(self,w,v):
+    def objective(self,inputs,trajs):
+        w,v = inputs
         return(self.reg(w) + v*self.f.objective(self.w) - np.sum(v)/self.K)
         
     
