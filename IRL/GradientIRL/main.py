@@ -22,6 +22,35 @@ data_path = '../../data/data_long.txt'
 write_path_girl = 'reward_params_girl.txt'
 write_path_self_paced = 'reward_params_girl_self_paced.txt'
 
+def plot_reward(reward,title):
+    X = 50
+    V = 50
+    
+    sp =reward.env.observation_space
+    
+    x = np.linspace(sp.low[0], sp.high[0], X)
+    v = np.linspace(sp.low[1], sp.high[1],V)
+
+    x, v = np.meshgrid(x, v)
+    
+    r = np.zeros([X, V])
+    
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    for i in range(X):
+        for j in range(V):
+            xi = i / (X-1) * (sp.high[0] - sp.low[0]) + sp.low[0]
+            vj = j / (V-1) * (sp.high[1] - sp.low[1]) + sp.low[1]
+            r[i, j] = reward.value([xi, vj], 1)
+    # =============================================================================
+    #         r[i,j] = reward.basis([xi,vj],0)
+    # =============================================================================
+    ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
+                           linewidth=0, antialiased=False)
+    ax.set_title(title)
+    
+    plt.show()
+
 # Read the data
 
 data = read.read(data_path)
@@ -91,94 +120,52 @@ plt.show()
 # #girl.compute_jacobian()
 # #print(girl.jacobian)
 # alphas = girl.solve(trajs)
-# =============================================================================
-
-# =============================================================================
-# plt.plot(alphas)
-# =============================================================================
-#plt.show()
-
-#plot(alphas)
-
-# =============================================================================
-# reward.set_params(alphas)
 # 
+# # plt.plot(alphas)
+# # =============================================================================
+# #plt.show()
+# 
+# #plot(alphas)
+# 
+# reward.set_params(alphas)
+# # 
 # reward.export_to_file(write_path_girl)
 # =============================================================================
+
 reward.import_from_file(write_path_girl)
 
-X = 50
-V = 50
-
-
-
-x = np.linspace(-1.2, 0.6, X)
-v = np.linspace(-0.07, 0.07,V)
-print(X)
-print(V)
-x, v = np.meshgrid(x, v)
-
-r = np.zeros([X, V])
-
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-for i in range(X):
-    for j in range(V):
-        xi = i / (X-1) * 1.8 - 1.2
-        vj = j / (V-1) * 0.14 - 0.07
-        r[i, j] = reward.value([xi, vj], 1)
-# =============================================================================
-#         r[i,j] = reward.basis([xi,vj],0)
-# =============================================================================
-ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
-
-plt.show()
+plot_reward(reward,'GIRL algorithm')
 
 reward_sp = rew.Reward(dx, dv,env)
 f_sp = irl.GIRL(reward_sp, policy)
-K0=1
-eps=1 #not working for now
+K0=5*10e4
+eps=10e-15 #not working for now
 mu=0.5
 
 girl_self_paced = Self_Paced(f_sp,K0,eps,mu)
 trajs = girl_self_paced.import_data(data)
-alphass = girl_self_paced.fit(trajs)
+# =============================================================================
+# alphass = girl_self_paced.fit1(trajs)
+# =============================================================================
+alphass = girl_self_paced.fit2(trajs)
 
 #plt.plot(alphas)
 #plt.show()
 
 #plot(alphas)
 
-print(alphass)
+print(len(alphass))
 
 reward_sp.set_params(alphass[-1])
 
 reward_sp.export_to_file(write_path_self_paced)
 #reward.import_from_file(write_path)
 
-x = np.linspace(-1.2, 0.6, X)
-v = np.linspace(-0.07, 0.07, V)
-print(X)
-print(V)
-x, v = np.meshgrid(x, v)
+for i in range(len(alphass)):
+    reward_sp.set_params(alphass[i])
 
-r = np.zeros([X, V])
-
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-for i in range(X):
-    for j in range(V):
-        xi = i / (X-1) * 1.8 - 1.2
-        vj = j / (V-1) * 0.14 - 0.07
-        r[i, j] = reward_sp.value([xi, vj], 1)
-print(x.shape)
-print(v.shape)
-print(r.shape)
-ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
-
-plt.show()
+    plot_reward(reward_sp,'Self-Paced GIRL algorithm : iteration %d' % (i))
+    
 
 '''
 fig = plt.figure()
