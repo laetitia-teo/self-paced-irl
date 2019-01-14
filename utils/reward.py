@@ -43,7 +43,7 @@ class Reward():
     
     def partial_value(self, state, action, idx):
         j = idx % self.dv
-        i = (idx - j)/self.dv
+        i = (idx - j)//self.dv
         return self.params[idx] * self.basis(state, i, j)
     
     def partial_traj(self, traj, idx):

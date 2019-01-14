@@ -1,28 +1,22 @@
 import sys
+
+sys.path.append('../..')
+sys.path.append('..')
+
 import numpy as np
 import scipy.optimize as opt
 from numpy.linalg import inv, norm
 from tqdm import tqdm
 from copy import copy
+from IRL import IRL
 
-sys.path.append('../..')
 
-class GIRL():
+class GIRL(IRL):
     """
     A class for estimating the parameters of the reward given some trajectory data.
     """
-    def __init__(self, reward, data, expert_policy):
-        self.reward = reward   
-        self.N = len(data)
-        self.trajs = []
-        for i in range(self.N):
-            traj = []           # building a single trajectory
-            T = len(data[i]['states'])
-            for t in range(T):
-                state = data[i]['states'][t]
-                action = data[i]['actions'][t]
-                traj.append([state, action])
-            self.trajs.append(traj)
+    def __init__(self, reward, expert_policy):
+        self.reward = reward   #untrained reward
         self.expert_policy = expert_policy
         self.jacobian = np.zeros([len(expert_policy.get_theta()), len(reward.params)])
         
@@ -32,7 +26,7 @@ class GIRL():
         """
         return self.expert_policy.Q.zero()
     
-    def compute_gradient(self, idx):
+    def compute_gradient(self, idx,trajs):
         """
         Computes, averaged on the set of trajectories given to the GIRL object, the gradient of 
         the objective function with respect to the expert policy parameters associated with
@@ -45,35 +39,50 @@ class GIRL():
             grad += r * g
         return grad/self.N
         
-    def compute_jacobian(self):
+    def compute_jacobian(self,trajs):
         """
         Computes the Jacobian of the full objective function.
         """
-        for l in tqdm(range(len(self.reward.params))):
-            self.jacobian[:, l] = self.compute_gradient(l)
+        jacobian = np.zeros([len(self.expert_policy.get_theta()), len(self.reward.params)])
+# =============================================================================
+#         for l in tqdm(range(len(self.reward.params))):
+#             jacobian[:, l] = self.compute_gradient(l,trajs)
+# =============================================================================
+        
+        for traj in tqdm(trajs):
+            g = self.expert_policy.grad_log(traj)
+            temp = np.zeros([len(self.expert_policy.get_theta()), len(self.reward.params)])
+            for idx in range(len(self.reward.params)):
+                temp[:,idx] = self.reward.basis_traj(traj, idx) * np.ones(len(temp))
+            jacobian += (g*temp.T).T
+        jacobian /=len(trajs)
+            
+        return jacobian
     
     def print_jacobian(self):
         with open('data.txt', 'a') as f:
             f.write(str(self.jacobian))
     
-    def objective(self, alpha):
-        M = np.dot(self.jacobian.T, self.jacobian)
+    def loss2(self, alpha,M):
         return np.dot(alpha, np.dot(M, alpha))
     
     def loss(self, trajs):
-        M = np.dot(self.jacobian.T, self.jacobian)
-        alpha = self.reward.params
-        return np.dot(alpha, np.dot(M, alpha))
+        #Linear approximation of the reward
+        return self.objective(self.reward.params,trajs)
     
-    def solve(self):
+    def solve(self,trajs):
         # Define constraints
         h = lambda x: norm(x, 1) - 1  # sum of all the alphas must be 1
         eq_cons = {'type': 'eq', 'fun': h}
         #ineq_cons = {'type': '
         # Define starting point
-        alpha0 = copy(self.reward.params)  # TODO : test with random starting vector
+        alpha0 = copy(self.reward.params)  
         # Define hessian and gradient of the objective?
-        result = opt.minimize(self.objective, alpha0, constraints=eq_cons)
+        
+        jacobian = self.compute_jacobian(trajs)
+        M = np.dot(jacobian.T, jacobian)
+
+        result = opt.minimize(self.loss2, alpha0, args=(M,), constraints=eq_cons)
         if not result.success:
             print(result.message)
             print(result)
