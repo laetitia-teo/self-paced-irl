@@ -66,16 +66,10 @@ class GIRL(IRL):
     def loss2(self, alpha,M):
         return np.dot(alpha, np.dot(M, alpha))
     
-    def loss(self,trajs):
+    def loss(self,w,Ms):
         losses = []
-        for traj in trajs:
-            g = self.expert_policy.grad_log(traj)
-            temp = np.zeros([len(self.expert_policy.get_theta()), len(self.reward.params)])
-            for idx in range(len(self.reward.params)):
-                temp[:,idx] = self.reward.basis_traj(traj, idx) * np.ones(len(temp))
-            jacobian = (g*temp.T).T
-            M = np.dot(jacobian.T, jacobian)
-            losses.append(self.loss2(self.reward.params,M))
+        for M in Ms:
+            losses.append(self.loss2(w,M))
         return np.asarray(losses)
             
 

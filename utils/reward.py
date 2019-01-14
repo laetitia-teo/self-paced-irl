@@ -23,7 +23,7 @@ class Reward():
         # tune sigma according to the discretization
         self.sigma_inv = inv(np.array([[0.5*(self.lx/self.dx)**2, 0.  ],
                                       [0., 0.5*(self.lv/self.dv)**2]])) 
-        self.params = np.zeros(dx * dv)
+        self.params = np.ones(dx * dv)/(dx*dv)
     
     def value(self, state, action):
         r = 0.

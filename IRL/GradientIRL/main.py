@@ -107,15 +107,13 @@ plt.show()
 # =============================================================================
 reward.import_from_file(write_path_girl)
 
-X = 200
-V = 200
+X = 50
+V = 50
 
 
 
 x = np.linspace(-1.2, 0.6, X)
 v = np.linspace(-0.07, 0.07,V)
-X = len(x)
-V = len(v)
 print(X)
 print(V)
 x, v = np.meshgrid(x, v)
@@ -132,9 +130,6 @@ for i in range(X):
 # =============================================================================
 #         r[i,j] = reward.basis([xi,vj],0)
 # =============================================================================
-print(x.shape)
-print(v.shape)
-print(r.shape)
 ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
 
@@ -144,8 +139,9 @@ reward_sp = rew.Reward(dx, dv,env)
 f_sp = irl.GIRL(reward_sp, policy)
 K0=1
 eps=1 #not working for now
+mu=0.5
 
-girl_self_paced = Self_Paced(f_sp,K0,eps,data)
+girl_self_paced = Self_Paced(f_sp,K0,eps,mu)
 trajs = girl_self_paced.import_data(data)
 alphass = girl_self_paced.fit(trajs)
 
@@ -154,6 +150,8 @@ alphass = girl_self_paced.fit(trajs)
 
 #plot(alphas)
 
+print(alphass)
+
 reward_sp.set_params(alphass[-1])
 
 reward_sp.export_to_file(write_path_self_paced)
@@ -161,8 +159,6 @@ reward_sp.export_to_file(write_path_self_paced)
 
 x = np.linspace(-1.2, 0.6, X)
 v = np.linspace(-0.07, 0.07, V)
-X = len(x)
-V = len(v)
 print(X)
 print(V)
 x, v = np.meshgrid(x, v)
