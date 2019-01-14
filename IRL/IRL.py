@@ -28,4 +28,16 @@ class IRL():
         '''
         raise NotImplementedError
         
+    def import_data(self,data):
+        trajs = []
+        for i in range(len(data)):
+            traj = []           # building a single trajectory
+            T = len(data[i]['states'])
+            for t in range(T):
+                state = data[i]['states'][t]
+                action = data[i]['actions'][t]
+                traj.append([state, action])
+            trajs.append(traj)
+        return trajs
+        
     
