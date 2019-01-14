@@ -7,59 +7,6 @@ from copy import copy
 
 sys.path.append('../..')
 
-class Reward():
-    """
-    Reward is the class defining a reward function for the IRL problem.
-    Reward is a linear combination of (Gaussian) radial basis functions.
-    
-    dx -> number of basis functions on the position dimension;
-    dv -> number of basis functions on the velocity dimension.
-    """
-    def __init__(self, dx, dv):
-        self.dx = dx
-        self.dv = dv
-        self.lx = 1.8  # length of the position interval
-        self.lv = 0.14 # length of the velocity interval
-        self.zx = 0.6  # zero of the position interval
-        self.zv = 0.07 # zero of the velocity interval
-        # tune sigma according to the discretization
-        self.sigma_inv = inv(np.array([[.05, 0.  ],
-                                      [0., .0003]])) 
-        self.params = np.zeros(dx * dv)
-    
-    def value(self, state, action):
-        r = 0.
-        for i in range(self.dx):
-            for j in range(self.dv):
-                r += self.params[i, j] * self.basis(state, i, j)
-    
-    def basis(self, state, idx):
-        j = idx % self.dv
-        i = (idx - j)/self.dv
-        x, v = state
-        xi = i / (self.dx-1) * self.lx - self.zx 
-        vj = j / (self.dv-1) * self.lv - self.zv
-        s = np.array([x, v])
-        si = np.array([xi, vj])
-        return np.exp(-np.dot((s - si), np.dot(self.sigma_inv, (s - si))))
-    
-    def partial_value(self, state, action, idx):
-        j = idx % self.dv
-        i = (idx - j)/self.dv
-        return self.params[idx] * self.basis(state, i, j)
-    
-    def partial_traj(self, traj, idx):
-        r = 0.
-        for state, action in traj:
-            r += self.partial_value(state, action, idx)
-        return r
-    
-    def basis_traj(self, traj, idx):
-        r = 0.
-        for state, _ in traj:
-            r += self.basis(state, idx)
-        return r
-
 class GIRL():
     """
     A class for estimating the parameters of the reward given some trajectory data.
@@ -111,6 +58,11 @@ class GIRL():
     
     def objective(self, alpha):
         M = np.dot(self.jacobian.T, self.jacobian)
+        return np.dot(alpha, np.dot(M, alpha))
+    
+    def loss(self, trajs):
+        M = np.dot(self.jacobian.T, self.jacobian)
+        alpha = self.reward.params
         return np.dot(alpha, np.dot(M, alpha))
     
     def solve(self):

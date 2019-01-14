@@ -8,14 +8,17 @@ import numpy as np
 import gym
 import matplotlib.pyplot as plt
 import readtrajectory as read
-import estimatepolicy as estim
+#import estimatepolicy as estim
 import utils.gibbspolicy as gp
+import utils.reward as rew
 import gradientIRL as irl
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 env = gym.make('MountainCar-v0')
 T = 1000
 data_path = '../../data/data_long.txt'
+write_path = 'reward_params.txt'
 
 # Read the data
 
@@ -27,29 +30,31 @@ policy = gp.GibbsPolicy(env, T, 2.)
 
 print('fitting policy to data...')
 
-trace = policy.fit(data, 200)
+#trace = policy.fit(data, 200)
 
 #print(trace[-1])
 #print(policy.get_theta())
-policy.episode(render=True)
-for i in range(10):
-    policy.episode()
 
 #plt.plot([t[0] for t in trace])
 #plt.plot([t[2] for t in trace])
 #plt.show()
 
 
-#policy.set_theta(np.array([-18, -1, 18]))
+policy.set_theta(np.array([-18, -1, 18]))
 #policy.episode(render=True)
+
+#policy.episode(render=True)
+for i in range(10):
+    policy.episode()
+
 env.close()
 
 print('solving the IRL problem:')
 
-dx = 5
+dx = 10
 dv = 5
 
-reward = irl.Reward(dx, dv)
+reward = rew.Reward(dx, dv)
 
 L = dx*dv
 
@@ -77,15 +82,60 @@ plt.show()
 '''
 
 girl = irl.GIRL(reward, data, policy)
-girl.compute_jacobian()
-print(girl.jacobian)
-girl.print_jacobian()
-alphas = girl.solve()
+#girl.compute_jacobian()
+#print(girl.jacobian)
+#alphas = girl.solve()
 
-plt.plot(alphas)
+#plt.plot(alphas)
+#plt.show()
+
+#plot(alphas)
+
+#reward.set_params(alphas)
+#reward.export_to_file(write_path)
+
+reward.import_from_file(write_path)
+
+X = 50
+V = 50
+
+
+
+x = np.arange(-0.6, 1.2, 0.1)
+v = np.arange(-0.07, 0.07, 0.005)
+X = len(x)
+V = len(v)
+print(X)
+print(V)
+x, v = np.meshgrid(x, v)
+
+r = np.zeros([X, V])
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+for i in range(X):
+    for j in range(V):
+        xi = i / (X-1) * 1.8 - 0.6
+        vj = j / (V-1) * 0.14 - 0.07
+        r[i, j] = reward.value([xi, vj], 1)
+print(x.shape)
+print(v.shape)
+print(r.shape)
+ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+
 plt.show()
 
-plot(alphas)
+'''
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+for i in range(X):
+    for j in range(V):
+        xi = i / (X-1) * 1.8 - 0.6
+        vj = j / (V-1) * 0.14 - 0.07
+        ax.scatter(i, j, reward.value([xi, vj], 1), c='r')
+plt.show()
+'''
 
 
 
