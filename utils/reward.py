@@ -16,10 +16,10 @@ class Reward():
         sp = env.observation_space
         self.dx = dx
         self.dv = dv
-        self.lx = sp.high[0] - sp.low[0]  # length of the position interval
-        self.lv = sp.high[1] - sp.low[1] # length of the velocity interval
-        self.zx = -sp.low[0]  # zero of the position interval
-        self.zv = -sp.low[1] # zero of the velocity interval
+        self.lx = (sp.high[0] - sp.low[0])  # length of the position interval
+        self.lv = (sp.high[1] - sp.low[1]) # length of the velocity interval
+        self.zx = - sp.low[0]  # zero of the position interval
+        self.zv = - sp.low[1] # zero of the velocity interval
         # tune sigma according to the discretization
         self.sigma_inv = inv(np.array([[.05, 0.  ],
                                       [0., .0003]])) 
@@ -33,7 +33,7 @@ class Reward():
     
     def basis(self, state, idx):
         j = idx % self.dv
-        i = (idx - j)//self.dv
+        i = (idx-j)//self.dv
         x, v = state
         xi = i / (self.dx-1) * self.lx - self.zx 
         vj = j / (self.dv-1) * self.lv - self.zv
@@ -70,16 +70,25 @@ class Reward():
             f.write(repr(self.params))
     
     def plot(self):
+        fig = plt.figure()
+        x = np.arange(0., self.lx, 0.1)
+        v = np.arange(0., self.lv, 0.005)
+        x, v = np.meshgrid(x, v)
+        X = len(x)
+        V = len(v)
+        r = np.zeros([X, V])
         ax = fig.gca(projection='3d')
         for i in range(self.dx):
             for j in range(self.dv):
-                xi = i / (X-1) * 1.8 - 0.6
-                vj = j / (V-1) * 0.14 - 0.07
-                r[i, j] = reward.value([xi, vj], 1)
-                ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
+                xi = i / (self.dx-1) * self.lx - self.zx
+                vj = j / (self.dv-1) * self.lv - self.zv
+                r[i, j] = self.value([xi, vj], 1)
+        print(x.shape)
+        print(v.shape)
+        print(r.shape)
+        ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
                                 linewidth=0, antialiased=False)
-
-plt.show()
+        plt.show()
     
     
     
