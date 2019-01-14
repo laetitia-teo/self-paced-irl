@@ -47,14 +47,14 @@ policy.set_theta(np.array([-18, -1, 18]))
 for i in range(10):
     policy.episode()
 
-env.close()
+
 
 print('solving the IRL problem:')
 
 dx = 10
 dv = 5
 
-reward = rew.Reward(dx, dv)
+reward = rew.Reward(dx, dv, env)
 
 L = dx*dv
 
@@ -82,27 +82,24 @@ plt.show()
 '''
 
 girl = irl.GIRL(reward, data, policy)
-#girl.compute_jacobian()
+girl.compute_jacobian()
 #print(girl.jacobian)
-#alphas = girl.solve()
+alphas = girl.solve()
 
-#plt.plot(alphas)
+plt.plot(alphas)
 #plt.show()
 
 #plot(alphas)
 
 #reward.set_params(alphas)
-#reward.export_to_file(write_path)
+reward.export_to_file(write_path)
+#reward.plot()
 
 reward.import_from_file(write_path)
 
-X = 50
-V = 50
-
-
-
-x = np.arange(-0.6, 1.2, 0.1)
-v = np.arange(-0.07, 0.07, 0.005)
+x = np.arange(-1.2, 0.6, 0.1)
+print(x)
+v = np.arange(-0.07,0.07, 0.005)
 X = len(x)
 V = len(v)
 print(X)
@@ -111,13 +108,19 @@ x, v = np.meshgrid(x, v)
 
 r = np.zeros([X, V])
 
+plt.plot(reward.params)
+plt.show()
+
+#reward.plot()
+
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 for i in range(X):
     for j in range(V):
-        xi = i / (X-1) * 1.8 - 0.6
+        
+        xi = i / (X-1) * 1.8 - 1.2
         vj = j / (V-1) * 0.14 - 0.07
-        r[i, j] = reward.value([xi, vj], 1)
+        r[i, j] = reward.value([xi, vj], 0)
 print(x.shape)
 print(v.shape)
 print(r.shape)
@@ -125,7 +128,8 @@ ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
 
 plt.show()
-
+'''
+'''
 '''
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -136,6 +140,8 @@ for i in range(X):
         ax.scatter(i, j, reward.value([xi, vj], 1), c='r')
 plt.show()
 '''
+
+env.close()
 
 
 
