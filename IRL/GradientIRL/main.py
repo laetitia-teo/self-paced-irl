@@ -138,7 +138,7 @@ plot_reward(reward,'GIRL algorithm')
 
 reward_sp = rew.Reward(dx, dv,env)
 f_sp = irl.GIRL(reward_sp, policy)
-K0=5*10e4
+K0=10e4
 eps=10e-15 #not working for now
 mu=0.5
 

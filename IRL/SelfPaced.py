@@ -108,7 +108,8 @@ class Self_Paced(IRL):
         
         loss = []
         while(not (self.v == np.ones(len(trajs))).all()): #find a termination condition perhaps double while (alternative search, and then decrement)
-            print('New K value ///////////////////////////////////////////////////////////////////')
+            print('New K value %f ///////////////////////////////////////////////////////////////////'%(self.K))
+            print('ACS, ' + str(np.sum(self.v))+' samples already taken in account')
             self.v = np.zeros(len(trajs)) #start
             start=True
             #Alternative search strategy
@@ -122,10 +123,9 @@ class Self_Paced(IRL):
                     print(result_v)
                 old_v = self.v
                 self.v = result_v.x #check if we need process to go to [0,1]
-                print(np.linalg.norm(self.w,1))
+                print(str(np.sum(self.v))+' samples already taken in account')
+
                                 
-                                
-                print('ACS, ' + str(np.sum(self.v))+' samples taken in account')
                 
                 J = np.tensordot(self.v,Js,axes=([0],[0]))
                 M = np.dot(J.T,J)
@@ -133,7 +133,6 @@ class Self_Paced(IRL):
                 result_w = opt.minimize(self.objective_w2, self.w,args=(M,),constraints=self.alpha_cons[0])
                 if not result_w.success:
                     print(result_w.message)
-                print(np.linalg.norm(result_w.x,1))
                 self.w = result_w.x
                 self.f.reward.set_params(self.w)
             if(np.linalg.norm(self.w - old_w)):
