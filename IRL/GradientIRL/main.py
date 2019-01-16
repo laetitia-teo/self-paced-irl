@@ -114,23 +114,21 @@ plt.plot(l)
 plt.show()
 '''
 
+girl = irl.GIRL(reward, policy)
+trajs = girl.import_data(data)
+#girl.compute_jacobian()
+#print(girl.jacobian)
+alphas = girl.solve(trajs)
+
+# plt.plot(alphas)
 # =============================================================================
-# girl = irl.GIRL(reward, policy)
-# trajs = girl.import_data(data)
-# #girl.compute_jacobian()
-# #print(girl.jacobian)
-# alphas = girl.solve(trajs)
+#plt.show()
+
+#plot(alphas)
+
+reward.set_params(alphas)
 # 
-# # plt.plot(alphas)
-# # =============================================================================
-# #plt.show()
-# 
-# #plot(alphas)
-# 
-# reward.set_params(alphas)
-# # 
-# reward.export_to_file(write_path_girl)
-# =============================================================================
+reward.export_to_file(write_path_girl)
 
 reward.import_from_file(write_path_girl)
 
@@ -140,7 +138,7 @@ reward_sp = rew.Reward(dx, dv,env)
 f_sp = irl.GIRL(reward_sp, policy)
 K0=10e4
 eps=10e-15 #not working for now
-mu=0.5
+mu=0.5  
 
 girl_self_paced = Self_Paced(f_sp,K0,eps,mu)
 trajs = girl_self_paced.import_data(data)

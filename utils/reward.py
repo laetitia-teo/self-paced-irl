@@ -25,25 +25,38 @@ class Reward():
                                       [0., 0.5*(self.lv/self.dv)**2]])) 
         self.params = np.ones(dx * dv)
         self.params /=np.linalg.norm(self.params,1)
+        
+        self.centers = np.zeros((dx*dv,2))
+        self.fill_centers()
 # =============================================================================
 #         self.params = np.zeros(dx*dv)
 # =============================================================================
         self.env = env
+        
+    def fill_centers(self):
+        for i in range(self.dx):
+            self.centers[i*self.dv:(i+1)*self.dv,0] += i / (self.dx-1) * self.lx - self.zx 
+        for j in range(self.dv):
+            self.centers[j::self.dv,1] += j / (self.dv-1) * self.lv - self.zv
     
     def value(self, state, action):
-        r = 0.
-        for idx in range(self.dx*self.dv):
-            r += self.params[idx] * self.basis(state, idx)
+# =============================================================================
+#         r = 0.
+#         for idx in range(self.dx*self.dv):
+#             r += self.params[idx] * self.basis(state, idx)
+# =============================================================================
+        r=np.dot(self.params,self.basis2(state))
         return r
     
+    def basis2(self,state):
+        state_normalized = state - self.centers
+        
+        result = np.einsum('ij,ij->i', np.dot(state_normalized, self.sigma_inv), state_normalized)
+        return np.exp(-result/2)
+    
     def basis(self, state, idx):
-        j = idx % self.dv
-        i = (idx-j)//self.dv
-        x, v = state
-        xi = i / (self.dx-1) * self.lx - self.zx 
-        vj = j / (self.dv-1) * self.lv - self.zv
-        s = np.array([x, v])
-        si = np.array([xi, vj])
+        s = state
+        si = self.centers[idx] 
         return np.exp(-np.dot((s - si), np.dot(self.sigma_inv, (s - si))))
     
     def partial_value(self, state, action, idx):
