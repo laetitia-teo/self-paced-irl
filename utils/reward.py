@@ -71,23 +71,26 @@ class Reward():
     
     def plot(self):
         fig = plt.figure()
-        x = np.arange(0., self.lx, 0.1)
-        v = np.arange(0., self.lv, 0.005)
-        x, v = np.meshgrid(x, v)
+        x = np.arange(-1.2, 0.6, 0.1)
+        v = np.arange(-0.07, 0.07, 0.005)
         X = len(x)
         V = len(v)
+        print(X)
+        print(V)
+        x, v = np.meshgrid(x, v)
+        
         r = np.zeros([X, V])
+        
+        fig = plt.figure()
         ax = fig.gca(projection='3d')
-        for i in range(self.dx):
-            for j in range(self.dv):
-                xi = i / (self.dx-1) * self.lx - self.zx
-                vj = j / (self.dv-1) * self.lv - self.zv
+        for i in range(X):
+            for j in range(V):
+                xi = i / (X-1) * 1.8 - 1.2
+                vj = j / (V-1) * 0.14 - 0.07
                 r[i, j] = self.value([xi, vj], 1)
-        print(x.shape)
-        print(v.shape)
-        print(r.shape)
         ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
-                                linewidth=0, antialiased=False)
+                       linewidth=0, antialiased=False)
+
         plt.show()
     
     

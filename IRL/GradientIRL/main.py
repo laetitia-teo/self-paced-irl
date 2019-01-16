@@ -14,11 +14,12 @@ import utils.reward as rew
 import gradientIRL as irl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from tqdm import tqdm
 
 env = gym.make('MountainCar-v0')
 T = 1000
 data_path = '../../data/data_long.txt'
-write_path = 'reward_params.txt'
+write_path = 'reward_params_100_100.txt'
 
 # Read the data
 
@@ -50,8 +51,8 @@ env.close()
 print('solving the IRL problem:')
 
 
-dx = 15
-dv = 15
+dx = 100
+dv = 100
 
 
 reward = rew.Reward(dx, dv,env)
@@ -99,16 +100,16 @@ alphas = girl.solve(trajs)
 
 reward.set_params(alphas)
 
-reward.export_to_file(write_path)
-reward.import_from_file(write_path)
+
+#reward.import_from_file(write_path)
 
 X = 50
 V = 50
 
 
 
-x = np.arange(-1.2, 0.6, 0.1)
-v = np.arange(-0.07, 0.07, 0.005)
+x = np.arange(-1.2, 0.6, 0.01)
+v = np.arange(-0.07, 0.07, 0.0005)
 X = len(x)
 V = len(v)
 print(X)
@@ -119,7 +120,7 @@ r = np.zeros([X, V])
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
-for i in range(X):
+for i in tqdm(range(X)):
     for j in range(V):
         xi = i / (X-1) * 1.8 - 1.2
         vj = j / (V-1) * 0.14 - 0.07
@@ -134,7 +135,7 @@ ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
 
 plt.show()
-
+reward.export_to_file(write_path)
 # =============================================================================
 # girl = irl.GIRL(reward, policy)
 # trajs = girl.import_data(data)

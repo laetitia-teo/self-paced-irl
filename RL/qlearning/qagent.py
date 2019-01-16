@@ -1,6 +1,5 @@
 # Discrete Q Agent for generating optimal trajectories
 
-
 import gym
 import numpy as np
 from tqdm import tqdm
@@ -17,7 +16,7 @@ class QTable(dict):
 
 class QAgent():
     
-    def __init__(self, env, T, discr=100, render=True, alpha=0.1, gamma=0.9):
+    def __init__(self, env, T, discr=100, render=True, alpha=0.1, gamma=1., reward_fun=None):
         self.env = env
         self.qtable = QTable(0) #
         self.discr = discr
@@ -26,6 +25,7 @@ class QAgent():
         self.gamma = gamma
         self.actionlist = [0, 1, 2]
         self.alpha = alpha
+        self.reward_fun = reward_fun
     
     def discretize_state(self, state):
         d_pos = np.floor(state[0]*self.discr)
@@ -38,6 +38,9 @@ class QAgent():
         # checking for the best action according to our current q-function
         q = self.qtable[(d_pos, d_spd, action)]
         return q
+    
+    def reset(self):
+        self.qtable = QTable(0)
     
     def set_Q(self, state, action, value):
         # discretization of position and velocity
@@ -100,6 +103,8 @@ class QAgent():
                 action = self.eps_greedy_action(eps, state)
                 # take a step, collect a reward
                 next_state, reward, _, _ = self.env.step(action)
+                if self.reward_fun:
+                    r = self.reward_fun.value(next_state, 1)
                 # update q function
                 self.Q_update(state, action, next_state, reward)
                 # save transition into trajectory
@@ -114,15 +119,17 @@ class QAgent():
         return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
     
     def q_learn(self, N):
+        lengths = []
         # performing N trajectories
         #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
         #epsilon = [1/(i+1) for i in range(int(N))]
         epsilon = [0.1 for i in range(N)]
         for n in tqdm(range(N)):
             #print('episode {}'.format(n))
-            self.episode(epsilon[n])
+            lengths.append(len(self.episode(epsilon[n])['states']))
         # final episode
         self.episode(0.0, render=True)
+        return lengths
     
     def generate_trajectories(self, n_traj):
         # with or without q updates ?
