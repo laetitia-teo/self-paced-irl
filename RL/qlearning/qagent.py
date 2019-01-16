@@ -16,7 +16,7 @@ class QTable(dict):
 
 class QAgent():
     
-    def __init__(self, env, T, discr=100, render=True, alpha=0.1, gamma=1., reward_fun=None):
+    def __init__(self, env, T, discr=100, render=True, alpha=0.1, gamma=1., reward_fun=None, add=None):
         self.env = env
         self.qtable = QTable(0) #
         self.discr = discr
@@ -26,6 +26,7 @@ class QAgent():
         self.actionlist = [0, 1, 2]
         self.alpha = alpha
         self.reward_fun = reward_fun
+        self.add = add
     
     def discretize_state(self, state):
         d_pos = np.floor(state[0]*self.discr)
@@ -103,8 +104,10 @@ class QAgent():
                 action = self.eps_greedy_action(eps, state)
                 # take a step, collect a reward
                 next_state, reward, _, _ = self.env.step(action)
-                if self.reward_fun:
-                    r = self.reward_fun.value(next_state, 1)
+                if(self.add == None and self.reward_fun):
+                    reward = self.reward_fun.value(next_state, 1)
+                elif(self.add ==True and self.reward_fun):
+                    reward += self.reward_fun.value(next_state, 1) 
                 # update q function
                 self.Q_update(state, action, next_state, reward)
                 # save transition into trajectory
@@ -118,7 +121,7 @@ class QAgent():
                 break
         return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
     
-    def q_learn(self, N):
+    def q_learn(self, N,plot_final=False):
         lengths = []
         # performing N trajectories
         #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
@@ -128,7 +131,8 @@ class QAgent():
             #print('episode {}'.format(n))
             lengths.append(len(self.episode(epsilon[n])['states']))
         # final episode
-        self.episode(0.0, render=True)
+        if(plot_final):
+            self.episode(0.0, render=True)
         return lengths
     
     def generate_trajectories(self, n_traj):
