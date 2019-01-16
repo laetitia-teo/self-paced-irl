@@ -14,42 +14,12 @@ import utils.reward as rew
 import gradientIRL as irl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
-from SelfPaced import Self_Paced
+from tqdm import tqdm
 
 env = gym.make('MountainCar-v0')
 T = 1000
 data_path = '../../data/data_long.txt'
-write_path_girl = 'reward_params_girl.txt'
-write_path_self_paced = 'reward_params_girl_self_paced.txt'
-
-def plot_reward(reward,title):
-    X = 50
-    V = 50
-    
-    sp =reward.env.observation_space
-    
-    x = np.linspace(sp.low[0], sp.high[0], X)
-    v = np.linspace(sp.low[1], sp.high[1],V)
-
-    x, v = np.meshgrid(x, v)
-    
-    r = np.zeros([X, V])
-    
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    for i in range(X):
-        for j in range(V):
-            xi = i / (X-1) * (sp.high[0] - sp.low[0]) + sp.low[0]
-            vj = j / (V-1) * (sp.high[1] - sp.low[1]) + sp.low[1]
-            r[i, j] = reward.value([xi, vj], 1)
-    # =============================================================================
-    #         r[i,j] = reward.basis([xi,vj],0)
-    # =============================================================================
-    ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
-                           linewidth=0, antialiased=False)
-    ax.set_title(title)
-    
-    plt.show()
+write_path = 'reward_params_100_100.txt'
 
 # Read the data
 
@@ -80,8 +50,9 @@ env.close()
 
 print('solving the IRL problem:')
 
-dx = 10
-dv = 10
+
+dx = 100
+dv = 100
 
 
 reward = rew.Reward(dx, dv,env)
@@ -114,6 +85,57 @@ plt.plot(l)
 plt.show()
 '''
 
+girl = irl.GIRL(reward, policy)
+trajs = girl.import_data(data)
+#girl.compute_jacobian()
+#print(girl.jacobian)
+alphas = girl.solve(trajs)
+
+# =============================================================================
+# plt.plot(alphas)
+# =============================================================================
+#plt.show()
+
+#plot(alphas)
+
+reward.set_params(alphas)
+
+
+#reward.import_from_file(write_path)
+
+X = 50
+V = 50
+
+
+
+x = np.arange(-1.2, 0.6, 0.01)
+v = np.arange(-0.07, 0.07, 0.0005)
+X = len(x)
+V = len(v)
+print(X)
+print(V)
+x, v = np.meshgrid(x, v)
+
+r = np.zeros([X, V])
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+for i in tqdm(range(X)):
+    for j in range(V):
+        xi = i / (X-1) * 1.8 - 1.2
+        vj = j / (V-1) * 0.14 - 0.07
+        r[i, j] = reward.value([xi, vj], 1)
+# =============================================================================
+#         r[i,j] = reward.basis([xi,vj],0)
+# =============================================================================
+print(x.shape)
+print(v.shape)
+print(r.shape)
+ax.plot_surface(x, v, r.T, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+
+plt.show()
+reward.export_to_file(write_path)
 # =============================================================================
 # girl = irl.GIRL(reward, policy)
 # trajs = girl.import_data(data)

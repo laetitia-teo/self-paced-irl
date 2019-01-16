@@ -66,14 +66,39 @@ class GIRL(IRL):
     def loss2(self, alpha,M):
         return np.dot(alpha, np.dot(M, alpha))
     
-    def loss(self, trajs):
-        #Linear approximation of the reward
-        return self.objective(self.reward.params,trajs)
+    def loss(self,w,Ms):
+        losses = []
+        for i in range(len(Ms)):
+            losses.append(self.loss2(w,Ms[i]))
+        return np.asarray(losses)
+
+    def loss3(self,w,Ms):
+        return(np.sum(self.loss(w,Ms),axis=0))
     
+    def compute_ms(self,trajs):
+        jacobians = self.compute_js(trajs)
+        Ms=np.asarray(jacobians.shape[0],jacobians.shape[2],jacobians.shape[2])
+        for i in range(len(trajs)):
+            Ms[i] = np.dot(jacobians[i].T, jacobians[i])
+        return Ms
+    
+    def compute_js(self,trajs):
+        jacobians = []
+        for traj in tqdm(trajs):
+            g = self.expert_policy.grad_log(traj)
+            temp = np.zeros([len(self.expert_policy.get_theta()), len(self.reward.params)])
+            for idx in range(len(self.reward.params)):
+                temp[:,idx] = self.reward.basis_traj(traj, idx) * np.ones(len(temp))
+            jacobian = (g*temp.T).T
+            jacobians.append(jacobian)
+        return np.asarray(jacobians)/len(trajs)
+            
     def solve(self,trajs):
         # Define constraints
         h = lambda x: norm(x, 1) - 1  # sum of all the alphas must be 1
         eq_cons = {'type': 'eq', 'fun': h}
+        
+        
         #ineq_cons = {'type': '
         # Define starting point
         alpha0 = copy(self.reward.params)  
@@ -81,8 +106,13 @@ class GIRL(IRL):
         
         jacobian = self.compute_jacobian(trajs)
         M = np.dot(jacobian.T, jacobian)
-
         result = opt.minimize(self.loss2, alpha0, args=(M,), constraints=eq_cons)
+        
+# =============================================================================
+#         Ms = self.compute_ms(trajs)
+#         result = opt.minimize(self.loss3, alpha0, args=(Ms,), constraints=eq_cons)
+# =============================================================================
+        
         if not result.success:
             print(result.message)
             print(result)

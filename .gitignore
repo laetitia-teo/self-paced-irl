@@ -1,3 +1,8 @@
 data/data.txt
 Images/
+<<<<<<< HEAD
 IRL/GradientIRL/reward_params.txt
+=======
+IRL/GradientIRL/rewards_params.txt
+IRL/GradientIRL/main.py
+>>>>>>> 6cfc467bbbf2177f18281b22f58b699c5c07f541
