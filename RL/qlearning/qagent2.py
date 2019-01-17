@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan 17 01:03:27 2019
+Created on Thu Jan 17 12:24:31 2019
 
 @author: thoma
 """
@@ -23,9 +23,9 @@ def Q(s,a,w,n_a,n_features,c,sig):
     temp = np.dot(phi(s,a,n_a,n_features,c,sig),w)    #linear approximation
     return temp
 
-class SARSA():
+class QAgent2():
     
-    def __init__(self,env, T, discr=100, render=True, discount = 0.99, alpha=0.05, gamma=1., epsilon = 0.1, n_slices = 10, reward_fun=None, add=None, add_weight=1):
+    def __init__(self,env, T, discr=100, render=True, discount = 0.99, alpha=0.1,epsilon = 0.1, n_slices = 10, reward_fun=None, add=None, add_weight=1):
     
     # The number of episodes used to evaluate the quality of a policy
         self.env=env
@@ -34,7 +34,6 @@ class SARSA():
         self.render=render
         self.discount = discount
         self.alpha=alpha
-        self.gamma=gamma
         self.epsilon = epsilon
         self.n_slices = n_slices
         self.reward_fun=reward_fun
@@ -71,7 +70,7 @@ class SARSA():
         return c
     
     def generate_sig(self): #our RBF circles
-        return np.ones(self.n_features)/10
+        return np.ones(self.n_features)/self.n_slices
     
     def chooseAction(self,state):
         eps = np.random.rand()
@@ -90,9 +89,9 @@ class SARSA():
     
 
         
-    def update_w(self,state,action,state_prim,action_prim,reward):
+    def update_w(self,state,action,state_prim,reward):
         temp1 = reward
-        temp2 = self.discount*np.dot(phi(state_prim,action_prim,self.n_a,self.n_features,self.centers,self.sigs),self.w)-np.dot(phi(state,action,self.n_a,self.n_features,self.centers,self.sigs),self.w) 
+        temp2 = self.discount*max([np.dot(phi(state_prim,action_prim,self.n_a,self.n_features,self.centers,self.sigs),self.w) for action_prim in range(self.n_a)])-np.dot(phi(state,action,self.n_a,self.n_features,self.centers,self.sigs),self.w) 
         #print(temp1,temp2)
         TD_error =temp1+temp2
         self.w += self.alpha*TD_error*phi(state,action,self.n_a,self.n_features,self.centers,self.sigs)
@@ -101,7 +100,7 @@ class SARSA():
         done = (np.floor(state[0]*self.discr) >= np.floor(0.5*self.discr))
         return done
     
-    def episode(self):
+    def episode(self,learn=True):
         
         states = []
         actions = []
@@ -123,7 +122,8 @@ class SARSA():
                     reward = self.reward_fun.value(state_prim, 1)
                 elif(self.add ==True and self.reward_fun):
                     reward += self.add_weight * self.reward_fun.value(state_prim, 1) 
-                self.update_w(state,action,state_prim,action_prim,reward)
+                if(learn):
+                    self.update_w(state,action,state_prim,reward)
                 states.append(list(state))
                 actions.append(action)
                 rewards.append(reward)
@@ -136,13 +136,11 @@ class SARSA():
                 break
         return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
     
-    def learn(self, N,plot_final=False):
+    def learn(self, N):
         lengths = []
         for i in tqdm(range(N)):
            lengths.append(len(self.episode()['states']))
         # final episode
-        if(plot_final):
-            self.episode(0.0, render=True)
         return lengths
     
     def run(self): #generate trajectories
@@ -162,7 +160,8 @@ class SARSA():
         # with or without q updates ?
         traj = []
         for i in range(n_traj):
-            traj.append(self.episode())
+            traj.append(self.episode(learn=False))
+            
         self.epsilon = eps_temp
         return traj
     

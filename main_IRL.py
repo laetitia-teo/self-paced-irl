@@ -18,9 +18,9 @@ from SelfPaced import Self_Paced
 
 env = gym.make('MountainCar-v0')
 T = 500
-data_path = 'data/data_long.txt'
-write_path_girl = 'trained_models/reward_params_girl.txt'
-write_path_self_paced = 'trained_models/reward_params_girl_self_paced.txt'
+data_path = 'data/data_long_sarsa.txt'
+write_path_girl = 'trained_models/reward_params_girl_sarsa.txt'
+write_path_self_paced = 'trained_models/reward_params_girl_self_paced_sarsa.txt'
 
 def plot_reward(reward,title):
     X = 50
@@ -80,8 +80,8 @@ env.close()
 
 print('solving the IRL problem:')
 
-dx = 10
-dv = 10
+dx = 15
+dv = 15
 
 
 reward = rew.Reward(dx, dv,env)

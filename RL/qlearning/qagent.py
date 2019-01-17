@@ -137,6 +137,20 @@ class QAgent():
             self.episode(0.0, render=True)
         return lengths
     
+    def learn(self, N,plot_final=False):
+        lengths = []
+        # performing N trajectories
+        #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
+        #epsilon = [1/(i+1) for i in range(int(N))]
+        epsilon = [0.1 for i in range(N)]
+        for n in tqdm(range(N)):
+            #print('episode {}'.format(n))
+            lengths.append(len(self.episode(epsilon[n])['states']))
+        # final episode
+        if(plot_final):
+            self.episode(0.0, render=True)
+        return lengths
+    
     def generate_trajectories(self, n_traj):
         # with or without q updates ?
         traj = []

@@ -24,19 +24,25 @@ from matplotlib import cm
 from SelfPaced import Self_Paced
 from RL.qlearning.qagent import QAgent
 from RL.Sarsa.sarsa import SARSA
+from RL.qlearning.qagent2 import QAgent2
 from tqdm import tqdm
 
 env = gym.make('MountainCar-v0')
 T = 1000
 N = 1
-nb_episodes=2000
+nb_episodes=500
 
-data_path = 'data/data_long.txt'
-write_path_girl = 'trained_models/reward_params_girl.txt'
-write_path_self_paced = 'trained_models/reward_params_girl_self_paced.txt'
+# =============================================================================
+# data_path = 'data/data_long.txt'
+# write_path_girl = 'trained_models/reward_params_girl.txt'
+# write_path_self_paced = 'trained_models/reward_params_girl_self_paced.txt'
+# =============================================================================
 
-dx = 10
-dv = 10
+write_path_girl = 'trained_models/reward_params_girl_sarsa.txt'
+write_path_self_paced = 'trained_models/reward_params_girl_self_paced_sarsa.txt'
+
+dx = 15
+dv = 15
 
 reward_IRL = rew.Reward(dx, dv,env)
 reward_IRL.import_from_file(write_path_girl)
@@ -48,15 +54,25 @@ reward_SP.import_from_file(write_path_self_paced)
 # qa = QAgent(env,T)
 # qaIRL = QAgent(env, T, reward_fun=reward_IRL)
 # qaSP = QAgent(env, T, reward_fun=reward_SP)
-# qaIRLadd = QAgent(env, T, reward_fun=reward_IRL,add=True,add_weight=10.)
-# qaSPadd = QAgent(env, T, reward_fun=reward_SP,add=True,add_weight=10.)
-# 
+# qaIRLadd = QAgent(env, T, reward_fun=reward_IRL,add=True,add_weight=1.)
+# qaSPadd = QAgent(env, T, reward_fun=reward_SP,add=True,add_weight=1.)
 # =============================================================================
-qa = SARSA(env,T)
-qaIRL = SARSA(env, T, reward_fun=reward_IRL)
-qaSP = SARSA(env, T, reward_fun=reward_SP)
-qaIRLadd = SARSA(env, T, reward_fun=reward_IRL,add=True,add_weight=200.)
-qaSPadd = SARSA(env, T, reward_fun=reward_SP,add=True,add_weight=200.)
+
+# =============================================================================
+# qa = SARSA(env,T)
+# qaIRL = SARSA(env, T, reward_fun=reward_IRL)
+# qaSP = SARSA(env, T, reward_fun=reward_SP)
+# qaIRLadd = SARSA(env, T, reward_fun=reward_IRL,add=True,add_weight=1.)
+# qaSPadd = SARSA(env, T, reward_fun=reward_SP,add=True,add_weight=1.)
+# =============================================================================
+
+qa = QAgent2(env,T)
+qaIRL = QAgent2(env, T, reward_fun=reward_IRL)
+qaSP = QAgent2(env, T, reward_fun=reward_SP)
+qaIRLadd = QAgent2(env, T, reward_fun=reward_IRL,add=True,add_weight=1.)
+qaSPadd = QAgent2(env, T, reward_fun=reward_SP,add=True,add_weight=1.)
+
+
 
 qs=[qa,qaIRL,qaSP,qaIRLadd,qaSPadd]
 
@@ -80,11 +96,18 @@ dict_=['Standard','IRL','Self_paced IRL','Standard+IRL','Standard+Self_paced IRL
 # dict_=['SARSA']
 # =============================================================================
 
+kept = [0,1,2,3,4]
+
 assert(len(ls)==len(qs))
 for i in tqdm(range(N)):
-    for i in range(len(qs)):
+    for i in kept:
+    #for i in range(3,len(qs)):
+        print(dict_[i])
         qs[i].reset()
         ls[i]-=np.asarray(qs[i].learn(nb_episodes))
+
+for i in range(N):
+    ls[i]/=N
 # =============================================================================
 #     qa.reset()
 #     qaIRL.reset()
@@ -105,8 +128,9 @@ for i in tqdm(range(N)):
 
 #trajs = qa.generate_trajectories(50)
 
-for i in range(len(qs)):
-    plt.plot(ls[i],label='Reward: dict_[i]',linestyle = 'None',markersize=10., marker='o')
+for i in kept:
+#for i in range(len(qs)):
+    plt.plot(np.convolve(ls[i],np.ones(5,)/5,mode='same'),label='Reward: '+dict_[i])#,linestyle = 'None',markersize=2., marker='o')
     plt.legend()
 # =============================================================================
 # plt.plot([length for length in lengths])
