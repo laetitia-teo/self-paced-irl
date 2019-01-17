@@ -29,22 +29,22 @@ from tqdm import tqdm
 
 env = gym.make('MountainCar-v0')
 T = 1000
-N = 1
+N = 20
 nb_episodes=500
 
 # =============================================================================
 # data_path = 'data/data_long.txt'
 # =============================================================================
-write_path_girl = 'trained_models/reward_params_girl.txt'
-write_path_self_paced = 'trained_models/reward_params_girl_self_paced.txt'
-
 # =============================================================================
-# write_path_girl = 'trained_models/reward_params_girl_sarsa.txt'
-# write_path_self_paced = 'trained_models/reward_params_girl_self_paced_sarsa.txt'
+# write_path_girl = 'trained_models/reward_params_girl.txt'
+# write_path_self_paced = 'trained_models/reward_params_girl_self_paced.txt'
 # =============================================================================
 
-dx = 10
-dv = 10
+write_path_girl = 'trained_models/reward_params_girl_sarsa.txt'
+write_path_self_paced = 'trained_models/reward_params_girl_self_paced_sarsa.txt'
+
+dx = 20
+dv = 20
 
 reward_IRL = rew.Reward(dx, dv,env)
 reward_IRL.import_from_file(write_path_girl)

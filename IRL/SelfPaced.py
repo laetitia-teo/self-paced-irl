@@ -101,20 +101,21 @@ class Self_Paced(IRL):
         self.v = np.zeros(len(trajs)) #start
         v0 = np.random.rand(len(trajs))
         old_v = self.v
-        
+        old_w = self.w
         Js = self.f.compute_js(trajs)
         
         ws = []
         
         loss = []
+        #while(start or np.linalg.norm(self.w-old_w,0)<10e-3):
         while(not (self.v == np.ones(len(trajs))).all()): #find a termination condition perhaps double while (alternative search, and then decrement)
+            start = False
             print('New K value %f ///////////////////////////////////////////////////////////////////'%(self.K))
             print('ACS, ' + str(np.sum(self.v))+' samples already taken in account')
             self.v = np.zeros(len(trajs)) #start
             start=True
             #Alternative search strategy
-            old_w = self.w
-            while((start == True or np.sum(self.v - old_v)>self.eps1 ) and np.sum(self.v)<len(trajs)):
+            while((start == True or np.linalg.norm(self.v - old_v,1)>self.eps1 ) and np.sum(self.v)<len(trajs)):
                 start=False
                 #minimising for v
                 result_v = opt.minimize(self.objective_v, self.v, args=(Js,), bounds = [(0,1)]*len(trajs))
@@ -126,8 +127,6 @@ class Self_Paced(IRL):
                 old_v = self.v
                 self.v = result_v.x #check if we need process to go to [0,1]
                 print(str(np.sum(self.v))+' samples already taken in account')
-
-                                
                 
                 J = np.tensordot(self.v,Js,axes=([0],[0]))
                 M = np.dot(J.T,J)
@@ -136,6 +135,7 @@ class Self_Paced(IRL):
                 if not result_w.success:
                     print(result_w.message)
                     break
+                old_w = self.w
                 self.w = result_w.x
                 self.f.reward.set_params(self.w)
             if(np.linalg.norm(self.w - old_w)):

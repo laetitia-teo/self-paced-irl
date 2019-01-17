@@ -119,7 +119,7 @@ trajs = girl.import_data(data)
 #girl.compute_jacobian()
 #print(girl.jacobian)
 alphas = girl.solve(trajs)
-
+print(alphas)
 # plt.plot(alphas)
 # =============================================================================
 #plt.show()
@@ -136,9 +136,9 @@ plot_reward(reward,'GIRL algorithm')
 
 reward_sp = rew.Reward(dx, dv,env)
 f_sp = irl.GIRL(reward_sp, policy)
-K0=10e4
+K0=10e3
 eps=10e-15 #not working for now
-mu=0.66
+mu=0.5
 
 girl_self_paced = Self_Paced(f_sp,K0,eps,mu)
 trajs = girl_self_paced.import_data(data)
@@ -153,6 +153,7 @@ alphass = girl_self_paced.fit2(trajs)
 #plot(alphas)
 
 print(len(alphass))
+print(alphass[-1])
 
 reward_sp.set_params(alphass[-1])
 
