@@ -16,7 +16,7 @@ class QTable(dict):
 
 class QAgent():
     
-    def __init__(self, env, T, discr=100, render=True, alpha=0.1, gamma=1., reward_fun=None, add=None):
+    def __init__(self, env, T, discr=100, render=True, alpha=0.1, gamma=1., reward_fun=None, add=None, add_weight=1):
         self.env = env
         self.qtable = QTable(0) #
         self.discr = discr
@@ -27,11 +27,13 @@ class QAgent():
         self.alpha = alpha
         self.reward_fun = reward_fun
         self.add = add
+        self.add_weight=add_weight
     
     def discretize_state(self, state):
         d_pos = np.floor(state[0]*self.discr)
         d_spd = np.floor(state[1]*self.discr)
         return d_pos, d_spd
+    
     
     def get_Q(self, state, action):
         # discretization of position and velocity
@@ -104,10 +106,10 @@ class QAgent():
                 action = self.eps_greedy_action(eps, state)
                 # take a step, collect a reward
                 next_state, reward, _, _ = self.env.step(action)
-                if(self.add == None and self.reward_fun):
+                if(self.add == None and self.reward_fun ):
                     reward = self.reward_fun.value(next_state, 1)
                 elif(self.add ==True and self.reward_fun):
-                    reward += self.reward_fun.value(next_state, 1) 
+                    reward += self.add_weight * self.reward_fun.value(next_state, 1) 
                 # update q function
                 self.Q_update(state, action, next_state, reward)
                 # save transition into trajectory
