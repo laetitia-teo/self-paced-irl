@@ -24,6 +24,7 @@ class Reward():
         self.sigma_inv = inv(np.array([[0.5*(self.lx/self.dx)**2, 0.  ],
                                       [0., 0.5*(self.lv/self.dv)**2]])) 
         self.params = np.ones(dx * dv)
+        #self.params = np.random.random_sample(dx*dv)
         self.params /=np.linalg.norm(self.params,1)
         
         self.centers = np.zeros((dx*dv,2))

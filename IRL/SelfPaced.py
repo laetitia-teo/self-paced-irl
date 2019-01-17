@@ -94,7 +94,7 @@ class Self_Paced(IRL):
                 ws.append(self.w)
             self.K=self.mu * self.K
         
-        return ws
+        return np.abs(ws)
     
     def fit2(self,trajs):
         start=True #for first iteration
@@ -119,6 +119,7 @@ class Self_Paced(IRL):
                 #minimising for v
                 result_v = opt.minimize(self.objective_v, self.v, args=(Js,), bounds = [(0,1)]*len(trajs))
                 if not result_v.success:
+                    print('hello')
                     print(result_v.message)
                     print(result_v)
                     break
@@ -131,7 +132,7 @@ class Self_Paced(IRL):
                 J = np.tensordot(self.v,Js,axes=([0],[0]))
                 M = np.dot(J.T,J)
 
-                result_w = opt.minimize(self.objective_w2, self.w,args=(M,),constraints=self.alpha_cons[0])
+                result_w = opt.minimize(self.objective_w2, self.w,args=(M,),constraints=self.alpha_cons[0],bounds = [(0,1)]*len(self.w))
                 if not result_w.success:
                     print(result_w.message)
                     break

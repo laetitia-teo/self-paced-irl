@@ -52,13 +52,15 @@ class QAgent2():
         self.centers = self.generate_centers()
         self.sigs = self.generate_sig()
         
-        self.w = np.random.random_sample(self.n_features*self.n_a)-0.5 #random initialisation
+        self.w = np.random.random_sample(self.n_features*self.n_a)/10-0.5 #random initialisation
         #self.w = np.zeros(self.n_features*self.n_a) #random initialisation
 
     
     
     def reset(self):
-        self.w = np.random.random_sample(self.n_features*self.n_a)-0.5
+        self.w = np.random.random_sample(self.n_features*self.n_a)/10-0.5
+        #self.w = np.zeros(self.n_features*self.n_a) #random initialisation
+
     
     def generate_centers(self):
         x = np.linspace(self.env.observation_space.low[0], self.env.observation_space.high[0], self.n_slices)
@@ -112,7 +114,7 @@ class QAgent2():
         j=0
         done=False
         while(j<self.T):
-            if not self.done(state):
+            if (not self.done(state)) :
 
                 j=j+1
                 state_prim, reward, done, info = self.env.step(action)

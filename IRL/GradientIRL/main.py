@@ -19,8 +19,8 @@ from SelfPaced import Self_Paced
 env = gym.make('MountainCar-v0')
 T = 1000
 data_path = '../../data/data_long.txt'
-write_path_girl = 'reward_params_girl.txt'
-write_path_self_paced = 'reward_params_girl_self_paced.txt'
+write_path_girl = '../../trained_models/reward_params_girl.txt'
+write_path_self_paced = '../../trained_models/reward_params_girl_self_paced.txt'
 
 def plot_reward(reward,title):
     X = 50
@@ -126,7 +126,7 @@ alphas = girl.solve(trajs)
 
 #plot(alphas)
 
-reward.set_params(alphas)
+reward.set_params(np.abs(alphas))
 # 
 reward.export_to_file(write_path_girl)
 
@@ -154,7 +154,7 @@ alphass = girl_self_paced.fit2(trajs)
 
 print(len(alphass))
 
-reward_sp.set_params(alphass[-1])
+reward_sp.set_params(np.abs(alphass[-1]))
 
 reward_sp.export_to_file(write_path_self_paced)
 #reward.import_from_file(write_path)

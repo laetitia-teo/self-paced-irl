@@ -34,15 +34,17 @@ nb_episodes=500
 
 # =============================================================================
 # data_path = 'data/data_long.txt'
-# write_path_girl = 'trained_models/reward_params_girl.txt'
-# write_path_self_paced = 'trained_models/reward_params_girl_self_paced.txt'
+# =============================================================================
+write_path_girl = 'trained_models/reward_params_girl.txt'
+write_path_self_paced = 'trained_models/reward_params_girl_self_paced.txt'
+
+# =============================================================================
+# write_path_girl = 'trained_models/reward_params_girl_sarsa.txt'
+# write_path_self_paced = 'trained_models/reward_params_girl_self_paced_sarsa.txt'
 # =============================================================================
 
-write_path_girl = 'trained_models/reward_params_girl_sarsa.txt'
-write_path_self_paced = 'trained_models/reward_params_girl_self_paced_sarsa.txt'
-
-dx = 15
-dv = 15
+dx = 10
+dv = 10
 
 reward_IRL = rew.Reward(dx, dv,env)
 reward_IRL.import_from_file(write_path_girl)
@@ -102,11 +104,11 @@ assert(len(ls)==len(qs))
 for i in tqdm(range(N)):
     for i in kept:
     #for i in range(3,len(qs)):
-        print(dict_[i])
+        #print(dict_[i])
         qs[i].reset()
         ls[i]-=np.asarray(qs[i].learn(nb_episodes))
 
-for i in range(N):
+for i in kept:
     ls[i]/=N
 # =============================================================================
 #     qa.reset()

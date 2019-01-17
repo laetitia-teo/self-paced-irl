@@ -116,7 +116,7 @@ class GIRL(IRL):
         if not result.success:
             print(result.message)
             print(result)
-        alpha = result.x
+        alpha = np.abs(result.x)
         return alpha
     
             

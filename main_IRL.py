@@ -80,8 +80,8 @@ env.close()
 
 print('solving the IRL problem:')
 
-dx = 15
-dv = 15
+dx = 20
+dv = 20
 
 
 reward = rew.Reward(dx, dv,env)
@@ -138,7 +138,7 @@ reward_sp = rew.Reward(dx, dv,env)
 f_sp = irl.GIRL(reward_sp, policy)
 K0=10e4
 eps=10e-15 #not working for now
-mu=0.5  
+mu=0.66
 
 girl_self_paced = Self_Paced(f_sp,K0,eps,mu)
 trajs = girl_self_paced.import_data(data)
