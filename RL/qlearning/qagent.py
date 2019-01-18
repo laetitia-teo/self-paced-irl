@@ -39,10 +39,13 @@ class QAgent():
         self.actionlist = range(self.env.action_space.n)
         self.alpha = alpha
         self.reward_fun = reward_fun
+        self.add = add
+        self.add_weight=add_weight
     
     def discretize_state(self, state):
         d_state = np.floor(state*self.discr)
         return d_state
+    
     
     def get_Q(self, state, action):
         # discretization of position and velocity
@@ -131,7 +134,21 @@ class QAgent():
                 break
         return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
     
-    def q_learn(self, N):
+    def q_learn(self, N,plot_final=False):
+        lengths = []
+        # performing N trajectories
+        #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
+        #epsilon = [1/(i+1) for i in range(int(N))]
+        epsilon = [0.1 for i in range(N)]
+        for n in tqdm(range(N)):
+            #print('episode {}'.format(n))
+            lengths.append(len(self.episode(epsilon[n])['states']))
+        # final episode
+        if(plot_final):
+            self.episode(0.0, render=True)
+        return lengths
+    
+    def learn(self, N,plot_final=False):
         lengths = []
         # performing N trajectories
         #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
@@ -141,7 +158,8 @@ class QAgent():
             #print('episode {}'.format(n))
             lengths.append(len(self.episode(epsilon[n])['states']))
         # final episode
-        self.episode(0.0, render=True)
+        if(plot_final):
+            self.episode(0.0, render=True)
         return lengths
     
     def generate_trajectories(self, n_traj):
