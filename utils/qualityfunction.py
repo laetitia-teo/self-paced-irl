@@ -25,6 +25,39 @@ class Quality:
     def value(self, state, action):
         raise NotImplementedError()
 
+class CartPoleQuality(Quality):
+    """
+    Abstrct class for a Quality function, specifying all that has to be
+    implemented.
+    """
+    def __init__(self, theta=None):
+        self.theta = 2*(np.random.random(16) - 0.5*np.ones(16))
+    
+    def set_theta(self, theta):
+        self.theta = theta
+    
+    def add_theta(self, theta):
+        self.theta += theta
+        
+    def zero(self):
+        return np.zeros(len(self.theta))
+        
+    def build_vector(self, state, action):
+        f = np.zeros(12)
+        ac = [0., 0., 0.]
+        ac[action] = 1.
+        for i in range(4):
+            for j in range(3):
+                f[i*3+j] = state[i]*ac[j]
+        return np.concatenate([state, f])
+    
+    def grad(self, state, action):
+        return self.build_vector(state, action)
+    
+    def value(self, state, action):
+        features = self.build_vector(state, action)
+        return np.dot(self.theta, features)
+
 class BasicQuality(Quality):
     """
     A Simple Quality value for state-action values to use in a Gibbs policy.

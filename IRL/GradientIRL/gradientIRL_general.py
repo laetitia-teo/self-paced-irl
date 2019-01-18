@@ -44,19 +44,12 @@ class GIRL(IRL):
         Computes the Jacobian of the full objective function.
         """
         jacobian = np.zeros([len(self.expert_policy.get_theta()), len(self.reward.params)])
-# =============================================================================
-#         for l in tqdm(range(len(self.reward.params))):
-#             jacobian[:, l] = self.compute_gradient(l,trajs)
-# =============================================================================
-        
+
         for traj in tqdm(trajs):
             g = self.expert_policy.grad_log(traj)
-            temp = np.zeros([len(self.expert_policy.get_theta()), len(self.reward.params)])
-            for idx in range(len(self.reward.params)):
-                temp[:,idx] = self.reward.basis_traj(traj, idx) * np.ones(len(temp))
-            jacobian += (g*temp.T).T
-        jacobian /=len(trajs)
-            
+            R = self.reward.basis_traj(traj)
+            jacobian += np.outer(g, R)
+        jacobian /= len(trajs)
         return jacobian
     
     def print_jacobian(self):
@@ -97,15 +90,12 @@ class GIRL(IRL):
         # Define constraints
         h = lambda x: np.sum(x) + 1  # sum of all the alphas must be 1
         eq_cons = {'type': 'eq', 'fun': h}
-        
-        
-        #ineq_cons = {'type': '
         # Define starting point
         alpha0 = copy(self.reward.params)  
-        # Define hessian and gradient of the objective?
         
         jacobian = self.compute_jacobian(trajs)
         M = np.dot(jacobian.T, jacobian)
+        
         result = opt.minimize(self.loss2, alpha0, args=(M,), constraints=eq_cons)
         
 # =============================================================================

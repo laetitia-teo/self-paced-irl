@@ -80,8 +80,8 @@ env.close()
 
 print('solving the IRL problem:')
 
-dx = 10
-dv = 10
+dx = 20
+dv = 20
 
 
 reward = rew.Reward(dx, dv,env)

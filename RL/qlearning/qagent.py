@@ -13,30 +13,43 @@ class QTable(dict):
     def __getitem__(self, idx):
         self.setdefault(idx, self.default)
         return dict.__getitem__(self, idx)
+        
+class QRBF():
+    def __init__(self, discr, n_dims):
+        self.discr = discr
+        # numpy magic to create an array with all the means of the rbf
+        s = 'np.mgrid['
+        for i in range(n_dims):
+            s += ':discr, '
+        s = s[:-2]
+        s += ']'
+        m = eval(s)
+        self.means = np.reshape(1/discr*np.stack(m, axis=-1), (-1, n_dims))
 
 class QAgent():
     
-    def __init__(self, env, T, discr=100, render=True, alpha=0.1, gamma=1., reward_fun=None):
+    def __init__(self, env, T, discr=20, render=True, alpha=0.1, gamma=1., reward_fun=None):
         self.env = env
         self.qtable = QTable(0) #
-        self.discr = discr
+        sp = env.observation_space
+        self.discr = discr*1/(sp.high-sp.low)
         self.state = env.reset()
         self.T = T
         self.gamma = gamma
-        self.actionlist = [0, 1, 2]
+        self.actionlist = range(self.env.action_space.n)
         self.alpha = alpha
         self.reward_fun = reward_fun
     
     def discretize_state(self, state):
-        d_pos = np.floor(state[0]*self.discr)
-        d_spd = np.floor(state[1]*self.discr)
-        return d_pos, d_spd
+        d_state = np.floor(state*self.discr)
+        return d_state
     
     def get_Q(self, state, action):
         # discretization of position and velocity
-        d_pos, d_spd = self.discretize_state(state)
+        d_state = self.discretize_state(state)
         # checking for the best action according to our current q-function
-        q = self.qtable[(d_pos, d_spd, action)]
+        idx = tuple(d_state) + (action,)
+        q = self.qtable[idx]
         return q
     
     def reset(self):
@@ -44,9 +57,10 @@ class QAgent():
     
     def set_Q(self, state, action, value):
         # discretization of position and velocity
-        d_pos, d_spd = self.discretize_state(state)
+        d_state = self.discretize_state(state)
         # checking for the best action according to our current q-function
-        self.qtable[(d_pos, d_spd, action)] = value
+        idx = tuple(d_state) + (action,)
+        self.qtable[idx] = value
     
     def get_max_Q(self, state):
         a0 = np.random.choice(self.actionlist)
@@ -83,7 +97,7 @@ class QAgent():
         self.set_Q(state, action, nextq)
     
     def done(self, state):
-        done = (np.floor(state[0]*self.discr) >= np.floor(0.5*self.discr))
+        done = state[0] >= 0.5
         return done
         
     def episode(self, eps, render=False):
@@ -96,25 +110,24 @@ class QAgent():
         rewards = []
         next_states = []
         for t in range(self.T):
-            if not self.done(state): 
-                if render:
-                    self.env.render()
-                # choose an action
-                action = self.eps_greedy_action(eps, state)
-                # take a step, collect a reward
-                next_state, reward, _, _ = self.env.step(action)
-                if self.reward_fun:
-                    r = self.reward_fun.value(next_state, 1)
-                # update q function
-                self.Q_update(state, action, next_state, reward)
-                # save transition into trajectory
-                states.append(list(state))
-                actions.append(action)
-                rewards.append(reward)
-                next_states.append(list(next_state))
-                # go into next state
-                state = next_state
-            else:
+            if render:
+                self.env.render()
+            # choose an action
+            action = self.eps_greedy_action(eps, state)
+            # take a step, collect a reward
+            next_state, reward, done, _ = self.env.step(action)
+            if self.reward_fun:
+                reward = self.reward_fun.value(next_state, 1)
+            # update q function
+            self.Q_update(state, action, next_state, reward)
+            # save transition into trajectory
+            states.append(list(state))
+            actions.append(action)
+            rewards.append(reward)
+            next_states.append(list(next_state))
+            # go into next state
+            state = next_state
+            if self.done(state):
                 break
         return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
     
@@ -123,7 +136,7 @@ class QAgent():
         # performing N trajectories
         #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
         #epsilon = [1/(i+1) for i in range(int(N))]
-        epsilon = [0.1 for i in range(N)]
+        epsilon = [0.2 for i in range(N)]
         for n in tqdm(range(N)):
             #print('episode {}'.format(n))
             lengths.append(len(self.episode(epsilon[n])['states']))

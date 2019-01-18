@@ -6,33 +6,34 @@ sys.path.append('../../utils')
 import time
 from qagent import *
 import matplotlib.pyplot as plt
-import reward as rd
+import reward_general as rd
 from tqdm import tqdm
 
-data_path = 'reward_params_15_15.txt'
+data_path = '../../data/reward_params_1.txt'
 
 env = gym.make('MountainCar-v0')
 write_path = 'data_long.txt'
 T = 1000
-N = 20
+N = 1
+I = 2000
 
 qa = QAgent(env, T)
 
-reward = rd.Reward(15, 15, env)
+reward = rd.Reward(10, env)
 reward.import_from_file(data_path)
 
 qa_r = QAgent(env, T, reward_fun=reward)
 
 #qa.episode(1, render=True)
 
-lengths = np.zeros(2000)
-lengths_r = np.zeros(2000)
+lengths = np.zeros(I)
+lengths_r = np.zeros(I)
 
 for i in tqdm(range(N)):
     qa.reset()
     qa_r.reset()
-    lengths += np.asarray(qa.q_learn(2000))
-    lengths_r += np.asarray(qa_r.q_learn(2000))
+    lengths += np.asarray(qa.q_learn(I))
+    lengths_r += np.asarray(qa_r.q_learn(I))
 
 lengths = 1/N * lengths
 lengths_r = 1/N * lengths_r
