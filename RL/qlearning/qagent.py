@@ -39,8 +39,6 @@ class QAgent():
         self.actionlist = range(self.env.action_space.n)
         self.alpha = alpha
         self.reward_fun = reward_fun
-        self.add = add
-        self.add_weight=add_weight
     
     def discretize_state(self, state):
         d_state = np.floor(state*self.discr)
@@ -112,6 +110,7 @@ class QAgent():
         actions = []
         rewards = []
         next_states = []
+        R = 0
         for t in range(self.T):
             if render:
                 self.env.render()
@@ -123,6 +122,7 @@ class QAgent():
                 reward = self.reward_fun.value(next_state, 1)
             # update q function
             self.Q_update(state, action, next_state, reward)
+            R += reward
             # save transition into trajectory
             states.append(list(state))
             actions.append(action)
@@ -130,37 +130,37 @@ class QAgent():
             next_states.append(list(next_state))
             # go into next state
             state = next_state
-            if self.done(state):
+            if done:
                 break
-        return dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
+        return R, dict(states=states, actions=actions, rewards=rewards, next_states=next_states)
     
-    def q_learn(self, N,plot_final=False):
-        lengths = []
+    def q_learn(self, N, plot_final=False):
+        Rs = []
         # performing N trajectories
         #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
         #epsilon = [1/(i+1) for i in range(int(N))]
         epsilon = [0.1 for i in range(N)]
         for n in tqdm(range(N)):
             #print('episode {}'.format(n))
-            lengths.append(len(self.episode(epsilon[n])['states']))
+            Rs.append(self.episode(epsilon[n])[0])
         # final episode
         if(plot_final):
             self.episode(0.0, render=True)
-        return lengths
+        return Rs
     
-    def learn(self, N,plot_final=False):
-        lengths = []
+    def learn(self, N, plot_final=False):
+        Rs = []
         # performing N trajectories
         #epsilon = [0.2 for i in range(int(N/2))] + [0.2/(i+1) for i in range(int(N/2))]
         #epsilon = [1/(i+1) for i in range(int(N))]
         epsilon = [0.2 for i in range(N)]
         for n in tqdm(range(N)):
             #print('episode {}'.format(n))
-            lengths.append(len(self.episode(epsilon[n])['states']))
+            Rs.append(self.episode(epsilon[n])[0])
         # final episode
         if(plot_final):
             self.episode(0.0, render=True)
-        return lengths
+        return Rs
     
     def generate_trajectories(self, n_traj):
         # with or without q updates ?

@@ -15,10 +15,13 @@ env = gym.make('MountainCar-v0')
 write_path = 'data_long.txt'
 T = 1000
 N = 1
-I = 2000
+I = 10000
 
 qa = QAgent(env, T)
-
+Rs = qa.learn(I)
+plt.plot(Rs)
+plt.show()
+'''
 reward = rd.Reward(10, env)
 reward.import_from_file(data_path)
 
@@ -43,6 +46,7 @@ trajs = qa.generate_trajectories(50)
 plt.plot([length for length in lengths])
 plt.plot([length for length in lengths_r])
 plt.show()
+'''
 '''
 proceed = input('Proceed to trajectory generation ?')
 

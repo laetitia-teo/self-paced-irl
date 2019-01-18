@@ -11,3 +11,11 @@ def read(path):
             t = ast.literal_eval(line)
             traj.append(t)
     return traj
+
+def read2(path):
+    traj = []
+    with open(path) as f:
+        for line in f.readlines():
+            t = ast.literal_eval(line)
+            traj.append(t[1])
+    return traj

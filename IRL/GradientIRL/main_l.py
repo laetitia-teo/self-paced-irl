@@ -8,20 +8,20 @@ import matplotlib.pyplot as plt
 import readtrajectory as read
 #import estimatepolicy as estim
 import gibbspolicy as gp
-import reward_general as rew
-import gradientIRL_general as irl
+import reward as rew
+import gradientIRL as irl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from tqdm import tqdm
 
 env = gym.make('MountainCar-v0')
 T = 1000
-data_path = '../../data/data_long.txt'
+data_path = '../../data/data_long_pad.txt'
 write_path = '../../reward_params_1.txt'
 
 # Read the data
 
-data = read.read(data_path)
+data = read.read2(data_path)
 
 # Estimate the policy parameters
 
@@ -41,7 +41,7 @@ policy.set_theta(np.array([-18, -1, 18]))
 dx = 10
 
 
-reward = rew.Reward(dx, env)
+reward = rew.Reward(dx, dx, env)
 
 girl = irl.GIRL(reward, policy)
 trajs = girl.import_data(data)
